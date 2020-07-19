@@ -9,10 +9,14 @@ library(tidyverse); library(compiler);  library(MCMCpack); library(scales)
 #######################################################################################################
 DCAM <- function(y_obser, y_group, K0=10, L0=20, prior, NSIM=100,
                         burn_in, thinning, verbose=TRUE, verbose.step=15, 
-                        fixedAB=T, restart=F, 
+                        fixedAB=T, restart=F, cheap=T, seed=NA,
                         kappa=0.5,warm.start=T) {
   
-  data    <- as.tibble(cbind(y_obser,y_group)) %>% arrange(y_group)
+  if(!is.na(seed)){
+    set.seed(seed)
+  }
+  
+  data    <- as_tibble(cbind(y_obser,y_group)) %>% arrange(y_group)
   J       <- length(unique(data$y_group)) # number of groups
   nj      <- table(data$y_group)          # number of observations inside each group
   N       <- length(y_obser)
@@ -150,11 +154,14 @@ DCAM <- function(y_obser, y_group, K0=10, L0=20, prior, NSIM=100,
     
   }
   
-  
-  
+  if(cheap){
+  out <- list(Z_j=Z_j, Csi_ij=Csi_ij, 
+              A_DP=ALPHA_DP, B_DP=BETA_DP,  y_obser=y_obser, y_group=y_group, NSIM=NSIM)
+  }else{
   out <- list(Z_j=Z_j, Csi_ij=Csi_ij, pi_star_k=pi_star_k, theta_star_zero=theta_star_zero, 
-              A_DP=ALPHA_DP, B_DP=BETA_DP,acc1=acc1, acc2=acc2,
+              A_DP=ALPHA_DP, B_DP=BETA_DP,
               omega_star_lk=omega_star_lk,  y_obser=y_obser, y_group=y_group, NSIM=NSIM)
+  }
   class(out) <- "DCAM" #Code-name for our model
   return(out)
 }
