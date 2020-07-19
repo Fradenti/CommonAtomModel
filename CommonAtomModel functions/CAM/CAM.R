@@ -28,10 +28,15 @@ CAM <- function(y_obser,
                 K0=10, L0=20, 
                 prior, 
                 NSIM=100, burn_in, thinning, 
-                verbose=TRUE, verbose.step=15, 
+                verbose.step=25, 
                 fixedAB=T,
-                restart=F, 
-                kappa=0.5) {
+                cheap=F,
+                kappa=0.5,
+                seed=NA) {
+  
+  if(!is.na(seed)){
+    set.seed(seed)
+  }
   
   data    <- as_tibble(cbind(y_obser,y_group)) %>% arrange(y_group)
   J       <- length(unique(data$y_group)) # number of groups
@@ -155,9 +160,15 @@ CAM <- function(y_obser,
                 sep = "" ))}
     
   }
-  out <- list(Z_j=Z_j, Csi_ij=Csi_ij, pi_star_k=pi_star_k, theta_star_zero=theta_star_zero, 
-              A_DP=ALPHA_DP, B_DP=BETA_DP,
-              omega_star_lk=omega_star_lk,  y_obser=y_obser, y_group=y_group, NSIM=NSIM)
-  class(out) <- "HnDP_SLICE" #Code-name for our model
+  if(cheap){
+    out <- list(Z_j=Z_j, Csi_ij=Csi_ij,
+                A_DP=ALPHA_DP, B_DP=BETA_DP,
+                y_obser=y_obser, y_group=y_group, NSIM=NSIM)
+  }else{
+    out <- list(Z_j=Z_j, Csi_ij=Csi_ij, pi_star_k=pi_star_k, theta_star_zero=theta_star_zero, 
+                A_DP=ALPHA_DP, B_DP=BETA_DP,
+                omega_star_lk=omega_star_lk,  y_obser=y_obser, y_group=y_group, NSIM=NSIM)
+  }
+  class(out) <- "CAM_SLICE" #Code-name for our model
   return(out)
 }
