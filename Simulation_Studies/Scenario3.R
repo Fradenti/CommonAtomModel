@@ -77,7 +77,7 @@ for(i in 1:6){
 }
 
 PSMs_2 <- map(DF_Csi, ~comp.psm(.x))
-O_CLs  <- map(PSMs_2, ~mcclust.ext::minVI(.x,method = "greedy")$cl)
+O_CLs  <- map(PSMs_2, ~mcclust.ext::minVI(.x)$cl)
 saveRDS(O_CLs,"Scenario_3_ObservationalClustering.RDS")
 
 plot(YD[[1]],col=O_CLs[[1]])

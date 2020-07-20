@@ -80,9 +80,6 @@ PSMs_2 <- map(DF_Csi, ~comp.psm(.x))
 O_CLsA  <- map(PSMs_2, ~mcclust.ext::minVI(.x)$cl)
 saveRDS(O_CLsA,"Scenario_1A_ObservationalClustering.RDS")
 
-plot(YD[[1]],col=O_CLs[[1]])
-plot(YD[[4]],col=O_CLs[[4]])
-
 
 
 
@@ -131,7 +128,7 @@ plot(YD[[1]],col=YG[[1]])
 plot(YD[[2]],col=YG[[2]])
 plot(YD[[3]],col=YG[[3]])
 
-##################################################################################
+#####################################g#############################################
 # Settin up the model -----------------------------------------------------
 
 S1_B <- mclapply(1:3,parallel.CAM,mc.cores = 3)
@@ -217,3 +214,4 @@ NDP_S1 <- newEnDP_Gibbs(y_obser = YD[[3]], y_group = YG[[3]],
                         RDG=T,cheap = T,seed = 12345)
 
 
+saveRDS(NDP_S1,"Scenario1B_Nested_RDG.RDS")
