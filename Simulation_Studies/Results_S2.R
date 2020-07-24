@@ -81,6 +81,9 @@ round(unlist(map2(UnnDist_OC,max_OC,~.x/.y)),3)
 
 
 
+# Nested DP  --------------------------------------------------------------
+
+
 S2_NDP <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM_JUL20/Scenario2_NDP.RDS")
 
 DC_EST_PSM <- mcclust::comp.psm(t(S2_NDP$Z_j))

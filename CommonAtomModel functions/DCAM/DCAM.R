@@ -4,13 +4,29 @@ library(plyr); library(Rcpp); library(RcppArmadillo)
 library(reshape); library(pryr); library(knitr); library(gridExtra)
 library(tidyverse); library(compiler);  library(MCMCpack); library(scales)
 
-
+# Starting number of
+# List of hyperparam
+# Number of Simulati
+# Thinning interval 
+# Print the iteratio
+# Do you want to kee
+# If T, the output w
+# Slice sampler para
+# Specify if you wan
 
 #######################################################################################################
-DCAM <- function(y_obser, y_group, K0=10, L0=20, prior, NSIM=100,
-                        burn_in, thinning, verbose=TRUE, verbose.step=15, 
-                        fixedAB=T, restart=F, cheap=T, seed=NA,
-                        kappa=0.5,warm.start=T) {
+DCAM <- function(y_obser,                 # Observations, organized in
+                 y_group,                 # Groups (numeric vector)
+                 K0=10, L0=20,            # Starting number of groups
+                 prior,                   # List of hyperparameters
+                 NSIM=100, burn_in=100,   # Number of Simulations and Burn in
+                 thinning,                # Thinning interval
+                 verbose.step=15,         # Print the iteration number every ... steps
+                 fixedAB=T,               # Do you want to keep the concentration parameters of the two DPs fixed?
+                 cheap=T,                 # If T, the output will contain only the membership labels 
+                 seed=NA,                 # Specify if you want to set the random seed
+                 kappa=0.5,               # Slice sampler parameter
+                 warm.start=T) {          # Should we use a smart starting point or a random one? (Kmeans)
   
   if(!is.na(seed)){
     set.seed(seed)
@@ -102,7 +118,7 @@ DCAM <- function(y_obser, y_group, K0=10, L0=20, prior, NSIM=100,
     zj <- reset(oldzj)
     omega[,unique(zj)] = omega[,unique(oldzj)] 
     zj.pg <- rep(zj,nj)
-    # If you feel bold and corageous, use the label switching moves. Still a work in progress
+    # If you feel bold and corageous, use the label switching moves. Still a work in progress.
 
     #    if(length(unique(zj))>1){
     #   if( runif(1)<.5){
@@ -170,51 +186,52 @@ DCAM <- function(y_obser, y_group, K0=10, L0=20, prior, NSIM=100,
 
 
 
+#
+# Auxiliary functions for label switching step. Do yourself a favor, ignore this for now.
+#-----------------------------------------------------
 
-# Auxiliary functions -----------------------------------------------------
-
-label_switching_move1 <- function(z,pi.z, NN.z){
-  oldz   = z
-  m      = c(table_factor_SLICE(z,L = NN.z))
-  two    = sample(max(unique(z)),2)
-  pi.two = pi.z[two]
-  m.two  = m[two]
-  ind1 <- which(oldz==two[1])
-  ind2 <- which(oldz==two[2])
-  accettato <- 0
-  if( runif(1) < (pi.two[1]/pi.two[2])**(m.two[2]-m.two[1]) ) {
-    z[ind1] = two[2]; z[ind2] = two[1]
-    accettato <- 1
-  }
-  return(list(z,accettato))
-}
-
-#######################################################################################################
-label_switching_move2 <- function(z, NN.z, v.z){
-  oldz   = z
-  m      = c(table_factor_SLICE(z,L = NN.z))
-  two    = sample(max(unique(z))-1,1)
-  two    = c(two,two+1)
-  v.two  = v.z[two]   #dovrebbe fregarmene ualcosa di scambiare davvero Vj e Vj+1?
-  m.two  = m[two]
-  ind1 <- which(oldz==two[1])
-  ind2 <- which(oldz==two[2])
-  accettato <- 0
-  if( runif(1) < ((1-v.two[2])^m.two[1] /
-                  (1-v.two[1])^m.two[2] ) ) {
-    z[ind1] = two[2]; z[ind2] = two[1]
-    accettato <- 1
-  }
-  return(list(z,accettato))
-}
-#######################################################################################################
-
-shuffle.col <- function(mat,z,NN.z){
-  ind   <- which(1:NN.z %in% z) # ordina
-  noind <- (1:NN.z)[-ind]
-  oldmat <- mat
-  cbind(mat[,ind],mat[,noind])
-}
+# label_switching_move1 <- function(z,pi.z, NN.z){
+#   oldz   = z
+#   m      = c(table_factor_SLICE(z,L = NN.z))
+#   two    = sample(max(unique(z)),2)
+#   pi.two = pi.z[two]
+#   m.two  = m[two]
+#   ind1 <- which(oldz==two[1])
+#   ind2 <- which(oldz==two[2])
+#   accettato <- 0
+#   if( runif(1) < (pi.two[1]/pi.two[2])**(m.two[2]-m.two[1]) ) {
+#     z[ind1] = two[2]; z[ind2] = two[1]
+#     accettato <- 1
+#   }
+#   return(list(z,accettato))
+# }
+# 
+# #######################################################################################################
+# label_switching_move2 <- function(z, NN.z, v.z){
+#   oldz   = z
+#   m      = c(table_factor_SLICE(z,L = NN.z))
+#   two    = sample(max(unique(z))-1,1)
+#   two    = c(two,two+1)
+#   v.two  = v.z[two]   #dovrebbe fregarmene ualcosa di scambiare davvero Vj e Vj+1?
+#   m.two  = m[two]
+#   ind1 <- which(oldz==two[1])
+#   ind2 <- which(oldz==two[2])
+#   accettato <- 0
+#   if( runif(1) < ((1-v.two[2])^m.two[1] /
+#                   (1-v.two[1])^m.two[2] ) ) {
+#     z[ind1] = two[2]; z[ind2] = two[1]
+#     accettato <- 1
+#   }
+#   return(list(z,accettato))
+# }
+# #######################################################################################################
+# 
+# shuffle.col <- function(mat,z,NN.z){
+#   ind   <- which(1:NN.z %in% z) # ordina
+#   noind <- (1:NN.z)[-ind]
+#   oldmat <- mat
+#   cbind(mat[,ind],mat[,noind])
+# }
 #######################################################################################################
 reset <- function(x){
   z <- y <- x

@@ -10,8 +10,9 @@ library(gridExtra)
 library(tidyverse); 
 library(MCMCpack); 
 library(scales)
-
-
+#
+Rcpp::sourceCpp("CommonAtomModel functions/CAM/CAM.cpp")
+#
 # Auxiliary functions -----------------------------------------------------
 reset <- function(x){
   z <- y <- x
@@ -21,18 +22,18 @@ reset <- function(x){
   }
   return(z)
 }
-
 #######################################################################################################
-CAM <- function(y_obser, 
-                y_group, 
-                K0=10, L0=20, 
-                prior, 
-                NSIM=100, burn_in, thinning, 
-                verbose.step=25, 
-                fixedAB=T,
-                cheap=F,
-                kappa=0.5,
-                seed=NA) {
+CAM <- function(y_obser,                         # Observations, organized into
+                y_group,                         # Groups (numeric vector 1- First group-->J- J-th group)
+                K0=10, L0=20,                    # Starting number of groups
+                prior,                           # List of hyperparameters
+                NSIM=100, burn_in = 100,         # Number of Simulations and Burn in
+                thinning = 1,                    # Thinning interval 
+                verbose.step=25,                 # Print the iteration number every ... steps
+                fixedAB=T,                       # Do you want to keep the concentration parameters of the two DPs fixed?
+                cheap=F,                         # If T, the output will contain only the membership labels
+                kappa=0.5,                       # Slice sampler parameter
+                seed=NA) {                       # Specify if you want to set the random seed
   
   if(!is.na(seed)){
     set.seed(seed)
@@ -82,7 +83,7 @@ CAM <- function(y_obser,
   Csi_ij              <- vector("list",length = NSIM)
   Z_j                 <- vector("list",length = NSIM)
   theta_star_zero     <- vector("list",length = NSIM)
-  
+  # Main loop
   for(sim in 2:(NSIM*thinning + burn_in)){
     ################################################################
     Uj  <- runif(J, 0, g(zj))

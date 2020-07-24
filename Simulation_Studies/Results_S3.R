@@ -1,37 +1,30 @@
 library(tidyverse)
 # Results from simulation studies -----------------------------------------
 
-
 # Simulation S3 -----------------------------------------------------------
+# Read output and extract results
 S3 <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM_JUL20/Scenario3_DCAMoutput.RDS")
-
 R <- GT_O <- list()
-
 for(i in 1:6){
   L <- R[[i]] <- S3[[i]]$y_obser
   GT_O[[i]] <- ifelse(L==0 | L==1,1, 
                       ifelse(L<=10,2,
                              ifelse(L<=50,3,4)  ))
 }
-
 plot(R[[6]],col=GT_O[[6]])
-
-
 gt_distr <- c(1,2,3,2,1,2,1,3,2,1)
-
 #############################################################
-# Load results
+# Distributional Clusters
 DF_Z <- list()
 for(i in 1:6){
   DF_Z[[i]] <- t(as.matrix(map_dfc(S3[[i]]$Z_j,~.x)))
 }
-
+# Estimate PSMs
 PSMs <- map(DF_Z, ~mcclust::comp.psm(.x))
 DC_S3  <- map(PSMs, ~mcclust.ext::minVI(.x,method = "greedy")$cl)
 
 
-# Estimate PSMs
-
+# Observational clusters
 DF_Csi <- list()
 for(i in 1:6){
   DF_Csi[[i]] <- t(as.matrix(map_dfc(S3[[i]]$Csi_ij,~.x)))
@@ -41,7 +34,7 @@ saveRDS(PSMs_2,"/home/fra/SIMULAZIONI per articoli/CAM_JUL20/ObservationalPSMs_S
 OC_S3  <- map(PSMs_2, ~mcclust.ext::minVI(.x)$cl)
 saveRDS(O_CLs,"/home/fra/SIMULAZIONI per articoli/CAM_JUL20/Scenario_3_ObservationalClustering.RDS")
 
-
+# Compute perfomance indexes
 
 # Adjuster RI
 map(DC_S3, ~length(unique(.x)))
@@ -52,9 +45,6 @@ round(unlist(map2(OC_S3,GT_O,mcclust::arandi)),3)
 # Compute GT PSM
 DC_GT_PSM  <- mcclust::comp.psm(rbind(gt_distr,gt_distr))
 OC_GT_PSMs <- map(GT_O, ~ mcclust::comp.psm(rbind(.x,.x)))
-
-
-
 
 
 # Unnormalized Frobenious (pairwise) distances
@@ -80,18 +70,12 @@ round(unlist(map2(UnnDist_OC,max_OC,~.x/.y)),3)
 
 
 
-# Nested ------------------------------------------------------------------
-
-
-
-
-
-
-
+# Nested DP ------------------------------------------------------------------
 NDP_S3 <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM_JUL20/Scenario3_Nested_RDG.RDS")
 
-  L <-  NDP_S3$y_obser
-  GT_O <- ifelse(L==0 | L==1,1, 
+# Partitions
+L <-  NDP_S3$y_obser
+GT_O <- ifelse(L==0 | L==1,1, 
                       ifelse(L<=10,2,
                              ifelse(L<=50,3,4)  ))
 DC_EST_PSM <- mcclust::comp.psm(t(apply(NDP_S3$Z_j,2,reset)))
@@ -121,7 +105,6 @@ DC_EST_PSM_NDP <- list()
 DC_EST_PSM_NDP[[1]] <- DC_EST_PSM
 OC_EST_PSM_NDP <- list()
 OC_EST_PSM_NDP[[1]] <- OC_EST_PSM
-
 max_DC <- map(DC_EST_PSM_NDP,
               ~ StatPerMeCo::Frobenius(
                 matrix(0,nrow(.x),ncol(.x)),
@@ -130,7 +113,6 @@ max_OC <- map(OC_EST_PSM_NDP,
               ~ StatPerMeCo::Frobenius(
                 matrix(0,nrow(.x),ncol(.x)),
                 matrix(1,nrow(.x),ncol(.x))))
-
 (unlist(map2(UnnDist_DC,max_DC,~.x/.y)))
 round(unlist(map2(UnnDist_OC,max_OC,~.x/.y)),3)
 
