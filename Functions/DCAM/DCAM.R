@@ -4,17 +4,9 @@ library(plyr); library(Rcpp); library(RcppArmadillo)
 library(reshape); library(pryr); library(knitr); library(gridExtra)
 library(tidyverse); library(compiler);  library(MCMCpack); library(scales)
 
-# Starting number of
-# List of hyperparam
-# Number of Simulati
-# Thinning interval 
-# Print the iteratio
-# Do you want to kee
-# If T, the output w
-# Slice sampler para
-# Specify if you wan
 
-#######################################################################################################
+# Main function -----------------------------------------------------------
+
 DCAM <- function(y_obser,                 # Observations, organized in
                  y_group,                 # Groups (numeric vector)
                  K0=10, L0=20,            # Starting number of groups
@@ -23,15 +15,15 @@ DCAM <- function(y_obser,                 # Observations, organized in
                  thinning,                # Thinning interval
                  verbose.step=15,         # Print the iteration number every ... steps
                  fixedAB=T,               # Do you want to keep the concentration parameters of the two DPs fixed?
-                 cheap=T,                 # If T, the output will contain only the membership labels 
+                 cheap=T,                 # If T, the output will contain only the membership labels
                  seed=NA,                 # Specify if you want to set the random seed
                  kappa=0.5,               # Slice sampler parameter
                  warm.start=T) {          # Should we use a smart starting point or a random one? (Kmeans)
-  
+
   if(!is.na(seed)){
     set.seed(seed)
   }
-  
+
   data    <- as_tibble(cbind(y_obser,y_group)) %>% arrange(y_group)
   J       <- length(unique(data$y_group)) # number of groups
   nj      <- table(data$y_group)          # number of observations inside each group
@@ -40,7 +32,7 @@ DCAM <- function(y_obser,                 # Observations, organized in
   y_lat   <- y_obser+runif(N)
   ############################### hyperparameters extraction
   # Prior for mu and sigma
-  m0 <- prior$m0; k0 <- prior$k0; 
+  m0 <- prior$m0; k0 <- prior$k0;
   a0 <- prior$a0; b0 <- prior$b0;
   # hyperparameters gamma distribution of alpha and beta of DP
   BETA_DP <- numeric(NSIM); ALPHA_DP <- numeric(NSIM)
@@ -85,15 +77,15 @@ DCAM <- function(y_obser,                 # Observations, organized in
   Csi_ij              <- vector("list",length = NSIM)
   Z_j                 <- vector("list",length = NSIM)
   theta_star_zero     <- vector("list",length = NSIM)
-  
+
   for(sim in 2:(NSIM*thinning + burn_in)){
-    ################################################################   
+    ################################################################
     Uj  <- runif(J, 0, g(zj))
     L.z  <- 1 + floor((log(Uj) - log(1 - kappa)) / log(kappa))
     J.z  <- max(zj)
     NN.z <- max(c(L.z, J.z))
     xi.z <- g(1:NN.z)
-    ################################################################  
+    ################################################################
     Uij     <- runif(N, 0, g(cij))
     L.c     <- 1 + floor((log(Uij) - log(1 - kappa)) / log(kappa))
     J.c     <- max(cij)
@@ -108,7 +100,7 @@ DCAM <- function(y_obser,                 # Observations, organized in
     ################################################################
     if(length(unique(zj))>1) {pi.z <- SB_given_u2(v.z)}else{pi.z <- v.z}
     ################################################################
-    tsl0 <- UPD_tsl0(y_LAT = y_lat, cij = cij,a0 = a0,b0 = b0,k0 = k0,m0 = m0,NN_c = NN.c,J = J) 
+    tsl0 <- UPD_tsl0(y_LAT = y_lat, cij = cij,a0 = a0,b0 = b0,k0 = k0,m0 = m0,NN_c = NN.c,J = J)
     ################################################################
     omega <- UPD_omega(cij = cij,zj_pg = zj.pg,NN_c = NN.c,NN_z = NN.z,beta = beta)
     oldzj <- c(UPD_Zj_collapsed_uij(Uj = Uj,xi_z = xi.z,xi_c = xi.c,
@@ -116,7 +108,7 @@ DCAM <- function(y_obser,                 # Observations, organized in
                    y_group = y_group,NN_z = NN.z,J = J))
     ############################### aggiunta solo sta linea
     zj <- reset(oldzj)
-    omega[,unique(zj)] = omega[,unique(oldzj)] 
+    omega[,unique(zj)] = omega[,unique(oldzj)]
     zj.pg <- rep(zj,nj)
     # If you feel bold and corageous, use the label switching moves. Still a work in progress.
 
@@ -135,24 +127,24 @@ DCAM <- function(y_obser,                 # Observations, organized in
     cij    <- apply(outer(tsl0.tmp[,1], tsl0[,1], "-"), 1, function(x) which(x == 0));
     ################################################################
     k      <- length(unique(zj))
-    eta    <- rbeta(1,alpha+1,J)  
+    eta    <- rbeta(1,alpha+1,J)
     Q      <- (a_alpha+k-1)/(J*(b_alpha-log(eta)))
-    pi_eta <- Q/(1+Q)  
-    alpha  <- ifelse(runif(1)<pi_eta,  rgamma(1,a_alpha+k,   b_alpha-log(eta)), 
+    pi_eta <- Q/(1+Q)
+    alpha  <- ifelse(runif(1)<pi_eta,  rgamma(1,a_alpha+k,   b_alpha-log(eta)),
                      rgamma(1, a_alpha+k-1,b_alpha-log(eta))  )
     ################################################################
     ################################################################
     k2      <- sum(tapply(cij, zj.pg, function(x)length(unique(x))))
-    eta2    <- rbeta(1,beta+1,N)  
+    eta2    <- rbeta(1,beta+1,N)
     Q2      <- (a_beta+k2-1)/(J*(b_beta-log(eta2)))
-    pi_eta2 <- Q2/(1+Q2)  
-    beta    <- ifelse(runif(1)<pi_eta2,  rgamma(1,a_beta+k,  b_beta-log(eta)), 
+    pi_eta2 <- Q2/(1+Q2)
+    beta    <- ifelse(runif(1)<pi_eta2,  rgamma(1,a_beta+k,  b_beta-log(eta)),
                     rgamma(1,a_beta+k-1,b_beta-log(eta))  )
     ################################################################
-    #cat(paste(length(unique(zj))))    
+    #cat(paste(length(unique(zj))))
     y_lat   <- Upd_LAT(y_obser = y_obser,cij = cij,tsl0 = tsl0,N = N)
-    
-    
+
+
     if (sim > burn_in & ((sim - burn_in) %% thinning == 0)) {
       rr                      <- floor((sim - burn_in)/thinning)
       pi_star_k[[rr]]         <- pi.z
@@ -163,18 +155,18 @@ DCAM <- function(y_obser,                 # Observations, organized in
       ALPHA_DP[rr]            <- alpha
       BETA_DP[rr]             <- beta
     }
-    
+
     if (sim%%(verbose.step*thinning) == 0) {
       cat(paste("Sampling iteration: ", sim, " out of ",NSIM*thinning + burn_in, "---", length(unique(zj)), "\n",
                 sep = "" ))}
-    
+
   }
-  
+
   if(cheap){
-  out <- list(Z_j=Z_j, Csi_ij=Csi_ij, 
+  out <- list(Z_j=Z_j, Csi_ij=Csi_ij,
               A_DP=ALPHA_DP, B_DP=BETA_DP,  y_obser=y_obser, y_group=y_group, NSIM=NSIM)
   }else{
-  out <- list(Z_j=Z_j, Csi_ij=Csi_ij, pi_star_k=pi_star_k, theta_star_zero=theta_star_zero, 
+  out <- list(Z_j=Z_j, Csi_ij=Csi_ij, pi_star_k=pi_star_k, theta_star_zero=theta_star_zero,
               A_DP=ALPHA_DP, B_DP=BETA_DP,
               omega_star_lk=omega_star_lk,  y_obser=y_obser, y_group=y_group, NSIM=NSIM)
   }
@@ -205,7 +197,7 @@ DCAM <- function(y_obser,                 # Observations, organized in
 #   }
 #   return(list(z,accettato))
 # }
-# 
+#
 # #######################################################################################################
 # label_switching_move2 <- function(z, NN.z, v.z){
 #   oldz   = z
@@ -225,7 +217,7 @@ DCAM <- function(y_obser,                 # Observations, organized in
 #   return(list(z,accettato))
 # }
 # #######################################################################################################
-# 
+#
 # shuffle.col <- function(mat,z,NN.z){
 #   ind   <- which(1:NN.z %in% z) # ordina
 #   noind <- (1:NN.z)[-ind]
