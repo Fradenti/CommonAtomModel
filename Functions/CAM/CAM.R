@@ -11,11 +11,11 @@ library(tidyverse);
 library(MCMCpack); 
 library(scales)
 #
-Rcpp::sourceCpp("CommonAtomModel functions/CAM/CAM.cpp")
+Rcpp::sourceCpp("Functions/CAM/CAM.cpp")
 #
 # Auxiliary functions -----------------------------------------------------
 reset <- function(x){
-  z <- y <- x
+  z  <- y <- x
   sy <- unique(sort(y))
   for(i in 1:length(unique(x))){
     z[which(x==sy[i])] <- i
@@ -82,7 +82,7 @@ CAM <- function(y_obser,                         # Observations, organized into
   omega_star_lk       <- vector("list",length = NSIM)
   Csi_ij              <- vector("list",length = NSIM)
   Z_j                 <- vector("list",length = NSIM)
-  theta_star_zero     <- vector("list",length = NSIM)
+  theta_star_with_prior <- theta_star_zero     <- vector("list",length = NSIM)
   # Main loop
   for(sim in 2:(NSIM*thinning + burn_in)){
     ################################################################
@@ -100,7 +100,7 @@ CAM <- function(y_obser,                         # Observations, organized into
     ################################################################
     if(NN.c > J.c) tsl0 <- rbind(tsl0, matrix( 0,(NN.c - J.c),2))
     ################################################################
-    tsl0  <- UPD_tsl0(y_obser = y_obser,cij = cij,a0 = a0,b0 = b0,k0 = k0,m0 = m0,NN_c = NN.c,J = J) 
+    tsl0 <- tslp  <- UPD_tsl0(y_obser = y_obser,cij = cij,a0 = a0,b0 = b0,k0 = k0,m0 = m0,NN_c = NN.c,J = J) 
     ################################################################
     v.z <- pi.z  <- numeric(NN.z)
     v.omega <- omega <- matrix(0, NN.c, NN.z)
@@ -119,6 +119,7 @@ CAM <- function(y_obser,                         # Observations, organized into
     omega[,unique(zj)] = omega[,unique(oldzj)] 
     zj.pg <- rep(zj,nj)
     ################################################################
+    # reshuffling step, it keeps only active components
     tsl0.tmp <- UPD_tsl0_for_cij(y_obser = y_obser,
                                  Uij = Uij,
                                  xi_c = xi.c,
@@ -127,7 +128,7 @@ CAM <- function(y_obser,                         # Observations, organized into
                                  tsl0 = tsl0,
                                  N = N,
                                  NN_c = NN.c)
-    tsl0     <- subset(tsl0.tmp,!duplicated(tsl0.tmp[,1]))
+    tsl0     <- subset(tsl0.tmp,!duplicated(tsl0.tmp[,1])) # find active values
     cij      <- apply(outer(tsl0.tmp[,1], tsl0[,1], "-"), 1, function(x) which(x == 0));
     ################################################################
     k      <- length(unique(zj))
@@ -154,6 +155,7 @@ CAM <- function(y_obser,                         # Observations, organized into
       theta_star_zero[[rr]]   <- tsl0
       ALPHA_DP[rr]            <- alpha
       BETA_DP[rr]             <- beta
+      theta_star_with_prior[[rr]]<- tslp # added to draw distributions a posteriori
     }
     
     if (sim%%(verbose.step*thinning) == 0) {
@@ -167,7 +169,7 @@ CAM <- function(y_obser,                         # Observations, organized into
                 y_obser=y_obser, y_group=y_group, NSIM=NSIM)
   }else{
     out <- list(Z_j=Z_j, Csi_ij=Csi_ij, pi_star_k=pi_star_k, theta_star_zero=theta_star_zero, 
-                A_DP=ALPHA_DP, B_DP=BETA_DP,
+                A_DP=ALPHA_DP, B_DP=BETA_DP,theta_star_with_prior = theta_star_with_prior,
                 omega_star_lk=omega_star_lk,  y_obser=y_obser, y_group=y_group, NSIM=NSIM)
   }
   class(out) <- "CAM_SLICE" #Code-name for our model

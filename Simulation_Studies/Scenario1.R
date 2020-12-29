@@ -4,8 +4,8 @@ library(Rcpp)
 library(tidyverse)
 library(mcclust)
 library(parallel)
-sourceCpp("CommonAtomModel functions/CAM/CAM.cpp")
-source("CommonAtomModel functions/CAM/CAM.R")
+sourceCpp("Functions/CAM/CAM.cpp")
+source("Functions/CAM/CAM.R")
 # Creation of parallelizable function -------------------------------------
 parallel.CAM <- function(i){
   CAM(y_obser = YD[[i]],y_group = YG[[i]],

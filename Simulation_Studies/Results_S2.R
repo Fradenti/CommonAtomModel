@@ -1,12 +1,23 @@
 library(tidyverse)
 # Results from simulation studies -----------------------------------------
-S2      <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM_JUL20/Scenario_2_CAMoutput.RDS")
+S2      <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM/CAM_JUL20/Scenario_2_CAMoutput.RDS")
+
+
+# some convergence diagnostic on concentration parameter
+library(coda)
+MC <- as.mcmc(cbind(S2[[1]]$A_DP,S2[[1]]$B_DP,S2[[2]]$A_DP,
+                    S2[[2]]$B_DP,S2[[3]]$A_DP,S2[[3]]$B_DP))
+# thinning to ease computation
+MC <- as.mcmc(MC[seq(1,50000,by = 10),])
+heidel.diag(MC)
+nclust <- unlist(purrr::map(S2[[1]]$Z_j, ~length(unique(.x))))
+heidel.diag(nclust)
 
 # Ground Truth
 # OC
 NNN <- 40
 lab <- c(rep(1,NNN*.75),  rep(2,NNN*.25),
-         rep(1,NNN*.25),   rep(2,NNN*.75),
+         rep(1,NNN*.25),  rep(2,NNN*.75),
          rep(1,NNN*.33),  rep(3,NNN*.34),rep(4,NNN*.33),
          rep(1,NNN*.25+1),rep(4,NNN*.25),
          rep(3,NNN*.25),  rep(5,NNN*.25))
@@ -28,8 +39,8 @@ for(i in 1:6){
 
 #############################################################
 # Load results
-DC_S2 <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM_JUL20/Scenario_2_DistributionalClustering.RDS")
-OC_S2 <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM_JUL20/Scenario_2_ObservationalClustering.RDS")
+DC_S2 <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM/CAM_JUL20/Scenario_2_DistributionalClustering.RDS")
+OC_S2 <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM/CAM_JUL20/Scenario_2_ObservationalClustering.RDS")
 
 # Adjuster RI
 unlist(map(DC_S2, ~length(unique(.x))))

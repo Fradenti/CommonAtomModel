@@ -3,38 +3,21 @@ library(tidyverse)
 
 
 # Simulation S1 -----------------------------------------------------------
+GT_O     <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM/CAM_JUL20/GT_ObseCluster_S1A.RDS")
+S1A      <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM/CAM_JUL20/Scenario_1A_CAMoutput.RDS")
 
-# Weird thing:
-# GT <- list()
-# # Data
-# YD <- YG <- list()
-# set.seed(123456)
-# med <- c(0,5,10,13,16,20)
-# CaseA <- function(m,s=sqrt(.6),N){
-#   p <- c()
-#   xx <- c()
-#   for(i in 1:6){
-#     x <- sample(1:i,N,T)
-#     xx <- c(xx,x)
-#     p <- c(p,rnorm(N,m[x],s)) }
-#   return(cbind(p,xx))
-# }
-# 
-# NUM_A <- c(25,50,75)
-# for(i in 1:3){
-#   y1 <- CaseA(m = med,s = sqrt(.6),N = NUM_A[i])
-#   y2 <- CaseA(m = med,s = sqrt(.6),N = NUM_A[i])
-#   YD[[i]] <- c(y1[,1],y2[,1])
-#   repet   <- rep(NUM_A[i],12) #rep(200,6)
-#   y_group <- c(rep(1:length(repet),repet))
-#   YG[[i]] <- y_group
-#   GT[[i]] <- c(y1[,2],y2[,2])
-# }
-# 
 
-# cosa strana: su server e su mio pc stesso seme porta a risultati diversi :(
-GT_O     <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM_JUL20/GT_ObseCluster_S1A.RDS")
-S1A      <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM_JUL20/Scenario_1A_CAMoutput.RDS")
+# some convergence diagnostic on concentration parameter
+library(coda)
+MC <- as.mcmc(cbind(S1A[[1]]$A_DP,S1A[[1]]$B_DP,S1A[[2]]$A_DP,S1A[[2]]$B_DP,S1A[[3]]$A_DP,S1A[[3]]$B_DP))
+# thinning to ease computation
+MC <- as.mcmc(MC[seq(1,50000,by = 20),])
+heidel.diag(MC)
+nclust <- unlist(purrr::map(S1A[[1]]$Z_j, ~length(unique(.x))))
+heidel.diag(nclust)
+
+
+########################################################
 
 plot(S1A[[1]]$y_obser,col=GT_O[[1]])
 gt_distr <- rep(1:6,2)
@@ -42,8 +25,8 @@ plot(YD[[1]],col=YG[[1]])
 
 #############################################################
 # Load results
-DC_S1A <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM_JUL20/Scenario_1A_DistributionalClustering.RDS")
-OC_S1A <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM_JUL20/Scenario_1A_ObservationalClustering.RDS")
+DC_S1A <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM/CAM_JUL20/Scenario_1A_DistributionalClustering.RDS")
+OC_S1A <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM/CAM_JUL20/Scenario_1A_ObservationalClustering.RDS")
 
 # Adjuster RI
 map(DC_S1A, ~length(unique(.x)))

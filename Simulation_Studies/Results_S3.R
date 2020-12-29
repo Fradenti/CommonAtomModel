@@ -3,7 +3,18 @@ library(tidyverse)
 
 # Simulation S3 -----------------------------------------------------------
 # Read output and extract results
-S3 <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM_JUL20/Scenario3_DCAMoutput.RDS")
+S3 <- readRDS("/home/fra/SIMULAZIONI per articoli/CAM/CAM_JUL20/Scenario3_DCAMoutput.RDS")
+
+library(coda)
+MC <- as.mcmc(cbind(S3[[1]]$A_DP,S3[[1]]$B_DP,S3[[2]]$A_DP,
+                    S3[[2]]$B_DP,S3[[3]]$A_DP,S3[[3]]$B_DP))
+# thinning to ease computation
+MC <- as.mcmc(MC[seq(1,50000,by = 20),])
+heidel.diag(MC)
+nclust <- unlist(purrr::map(S2[[1]]$Z_j, ~length(unique(.x))))
+heidel.diag(nclust)
+
+
 R <- GT_O <- list()
 for(i in 1:6){
   L <- R[[i]] <- S3[[i]]$y_obser
