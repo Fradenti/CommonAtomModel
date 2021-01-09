@@ -11,7 +11,7 @@ library(tidyverse);
 library(MCMCpack); 
 library(scales)
 #
-Rcpp::sourceCpp("Functions/CAM/CAM.cpp")
+#Rcpp::sourceCpp("Functions/CAM/CAM.cpp")
 #
 # Auxiliary functions -----------------------------------------------------
 reset <- function(x){

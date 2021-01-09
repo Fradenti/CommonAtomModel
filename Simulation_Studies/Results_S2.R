@@ -25,17 +25,14 @@ lab <- c(rep(1,NNN*.75),  rep(2,NNN*.25),
 plot(S2[[1]]$y_obser,col=lab)
 GT_O <- list()
 GT_O[[1]] <- lab
-GT_O[[2]] <- c(lab,ttt1)
-GT_O[[3]] <- c(lab,ttt2)
-GT_O[[4]] <- c(lab,ttt3)
-GT_O[[5]] <- c(lab,ttt4)
-GT_O[[6]] <- c(lab,ttt5)
+GT_O[[2]] <- c(lab,GT_O[[1]])
+GT_O[[3]] <- c(lab,GT_O[[2]])
+GT_O[[4]] <- c(lab,GT_O[[3]])
+GT_O[[5]] <- c(lab,GT_O[[4]])
+GT_O[[6]] <- c(lab,GT_O[[5]])
 plot(S2[[4]]$y_obser,col=GT_O[[4]])
+plot(S2[[6]]$y_obser,col=GT_O[[6]])
 
-gt_distr <- list()
-for(i in 1:6){
-  gt_distr[[i]] <- rep(1:4,i) 
-}
 
 #############################################################
 # Load results

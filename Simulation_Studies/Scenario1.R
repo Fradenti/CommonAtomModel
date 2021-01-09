@@ -12,7 +12,7 @@ parallel.CAM <- function(i){
       K0 = 10,L0 = 10,
       prior = list(
         # hyperparameters NIG
-        m0=0, k0=1/var(YD[[i]]), a0=3, b0=1,
+        m0=mean(YD[[i]]), k0=1/var(YD[[i]]), a0=3, b0=1,
         # hyperparameters alpha and beta
         a_alpha=3, b_alpha = 3,
         a_beta =3, b_beta = 3 ),
