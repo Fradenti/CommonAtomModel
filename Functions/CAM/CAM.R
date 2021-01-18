@@ -140,7 +140,7 @@ CAM <- function(y_obser,                         # Observations, organized into
                      rgamma(1, a_alpha+k-1,b_alpha-log(eta))  )
     ################################################################
     ################################################################
-    k2      <- sum(tapply(cij, zj.pg, function(x) length(unique(x)))) # length(unique(cij)) # double check this
+    k2      <- length(unique(cij)) # double check this sum(tapply(cij, zj.pg, function(x) length(unique(x)))) # 
     eta2    <- rbeta(1,beta+1,N)  
     Q2      <- (a_beta+k2-1)/(N*(b_beta-log(eta2)))
     pi_eta2 <- Q2/(1+Q2)  
