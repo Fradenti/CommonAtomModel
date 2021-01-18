@@ -135,16 +135,18 @@ CAM <- function(y_obser,                         # Observations, organized into
     eta    <- rbeta(1,alpha+1,J)  
     Q      <- (a_alpha+k-1)/(J*(b_alpha-log(eta)))
     pi_eta <- Q/(1+Q)  
-    alpha  <- ifelse(runif(1)<pi_eta,  rgamma(1,a_alpha+k,   b_alpha-log(eta)), 
+    alpha  <- ifelse(runif(1)<pi_eta,  
+                     rgamma(1, a_alpha+k,  b_alpha-log(eta)), 
                      rgamma(1, a_alpha+k-1,b_alpha-log(eta))  )
     ################################################################
     ################################################################
-    k2      <- sum(tapply(cij, zj.pg, function(x)length(unique(x))))
+    k2      <- sum(tapply(cij, zj.pg, function(x) length(unique(x)))) # length(unique(cij)) # double check this
     eta2    <- rbeta(1,beta+1,N)  
-    Q2      <- (a_beta+k2-1)/(J*(b_beta-log(eta2)))
+    Q2      <- (a_beta+k2-1)/(N*(b_beta-log(eta2)))
     pi_eta2 <- Q2/(1+Q2)  
-    beta  <- ifelse(runif(1)<pi_eta2,  rgamma(1,a_beta+k,  b_beta-log(eta)), 
-                    rgamma(1,a_beta+k-1,b_beta-log(eta))  )
+    beta    <- ifelse(runif(1)<pi_eta2,  
+                    rgamma(1,a_beta+k2,  b_beta-log(eta2)), 
+                    rgamma(1,a_beta+k2-1,b_beta-log(eta2))  )
     ################################################################
     if (sim > burn_in & ((sim - burn_in) %% thinning == 0)) {
       rr                      <- floor((sim - burn_in)/thinning)

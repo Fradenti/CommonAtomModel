@@ -134,12 +134,13 @@ DCAM <- function(y_obser,                 # Observations, organized in
                      rgamma(1, a_alpha+k-1,b_alpha-log(eta))  )
     ################################################################
     ################################################################
-    k2      <- sum(tapply(cij, zj.pg, function(x)length(unique(x))))
+    k2      <- length(unique(cij)) # double check this sum(tapply(cij, zj.pg, function(x) length(unique(x)))) # 
     eta2    <- rbeta(1,beta+1,N)
-    Q2      <- (a_beta+k2-1)/(J*(b_beta-log(eta2)))
+    Q2      <- (a_beta+k2-1)/(N*(b_beta-log(eta2)))
     pi_eta2 <- Q2/(1+Q2)
-    beta    <- ifelse(runif(1)<pi_eta2,  rgamma(1,a_beta+k,  b_beta-log(eta)),
-                    rgamma(1,a_beta+k-1,b_beta-log(eta))  )
+    beta    <- ifelse(runif(1)<pi_eta2,  
+                    rgamma(1,a_beta+k2,  b_beta-log(eta2)),
+                    rgamma(1,a_beta+k2-1,b_beta-log(eta2))  )
     ################################################################
     #cat(paste(length(unique(zj))))
     y_lat   <- Upd_LAT(y_obser = y_obser,cij = cij,tsl0 = tsl0,N = N)
