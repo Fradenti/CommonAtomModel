@@ -1,6 +1,6 @@
 # Source Functions --------------------------------------------------------
-Rcpp::sourceCpp("DCAM_LS_MAIN.cpp")
-source("DCAM_LS_MAIN.R")
+Rcpp::sourceCpp("Microbiome_Case_Study/DCAM_LS_MAIN.cpp")
+source("Microbiome_Case_Study/DCAM_LS_MAIN.R")
 
 # Load libraries ----------------------------------------------------------
 library(phyloseq)
@@ -127,12 +127,12 @@ prior1 <- list(
   a_alpha=3, b_alpha = 3,
   a_beta =3, b_beta  = 3)
 
-NSIM     = 100000
-burn_in  = 100000
+NSIM     = 50000
+burn_in  = 50000
 thinning =1
 set.seed (19922508)
 
-re1 <-DCAM_LibSize(y_obser = y_o1,
+R <-DCAM_LibSize(y_obser = y_o1,
                                 y_group = y_g1,
                                 K0 = length(id1),
                                 L0 = N_r,
@@ -144,10 +144,11 @@ re1 <-DCAM_LibSize(y_obser = y_o1,
                                 verbose.step = 2,
                                 warm.start = F,
                                 User.defined.gammas = udg1)
-#saveRDS(re1,"DCAM_results_Dietswap_time1.RDS")
+#saveRDS(R,"DCAM_results_Dietswap_time1_50k_betaok.RDS")
 
 # Output Analysis ---------------------------------------------------------
-#R <- readRDS("DCAM_results_Dietswap_time1.RDS")
+#
+R <- readRDS("DCAM_results_Dietswap_time1_50k_betaok.RDS")
 # Auxiliary function 
 reset <- function(x){
   z <- y <- x
@@ -159,7 +160,7 @@ reset <- function(x){
 }
 
 # 1 Distributional clusters analysis -------------------------------------------------
-ZM  <- t(apply(matrix(unlist(R$Z_j),100000,length(R$Z_j[[1]]),byrow = T),1,reset))
+ZM  <- t(apply(matrix(unlist(R$Z_j),NSIM,length(R$Z_j[[1]]),byrow = T),1,reset))
 psm <- mcclust::comp.psm(ZM)
 image(psm)
 # Collect distributional clusters - best partition accordinf to VI
@@ -182,8 +183,8 @@ Heatmap(psm,col = gray.colors(100),cluster_rows = F,cluster_columns = F,
         column_split = paste0("DC-",as.character(cl1$cl)),
         row_split = as.character(cl1$cl))
 
-#saveRDS(cl1,"Distr_Clust.RDS")
-cl1 <- readRDS("Distr_Clust.RDS")
+#saveRDS(cl1,"Distr_Clust_50k_betaok.RDS")
+cl1 <- readRDS("Distr_Clust_50k_betaok.RDS")
 
 # Descriptive results
 table(cl1$cl)
@@ -205,17 +206,17 @@ At <- At %>% mutate("Mean"          = apply(OT_r2,2,mean),
                     "Simpson Index" = apply(OT_r2,2,function(x) vegan::diversity(x,"simpson")),
                     "Skewness"      = apply(OT_r2,2,moments::skewness),
                     "Kurtosis"      = apply(OT_r2,2,moments::kurtosis))
-X <- At %>% select(Mean,Median,"Range",
-                   "Std.Dev","Skewness","Kurtosis",
-                   "% of zeros","Simpson Index","Shannon Index",cl)
+X <- At %>% dplyr::select(Mean,Median,Range,
+                   Std.Dev,Skewness,Kurtosis,
+                   `% of zeros`,`Simpson Index`,`Shannon Index`,cl)
 Xr <- reshape2::melt(X,"cl")
 Xr <- Xr %>% mutate( cl2 = paste0("DC-",cl)  )
 ggplot(Xr)+geom_boxplot(aes(x=cl2,y=value,group=cl2))+facet_wrap(~variable,scales="free")+
   theme_bw()+xlab("Distributional Clusters")+ylab("")+
   theme(strip.text.x = element_text(size = 10))
-# ggsave("Distrib_boxplots.png" ,width = 12,height = 15)
-# ggsave("Distrib_boxplots.tiff",width = 12,height = 15)
-# ggsave("Distrib_boxplots.pdf", width = 12,height = 15)
+# ggsave("Distrib_boxplots_50k_betaok.png" ,width = 12,height = 15)
+# ggsave("Distrib_boxplots_50k_betaok.tiff",width = 12,height = 15)
+# ggsave("Distrib_boxplots_50k_betaok.pdf", width = 12,height = 15)
 
 
 # Distributional clusters by OTU
@@ -231,9 +232,9 @@ ggplot(LL2)+
   geom_point(aes(x=Var1,y=value,group=Var2,col=as.factor(cluster_per_obs)),lwd=1,alpha=.9)+
   theme_bw()+scale_color_manual("Distributional\nCluster",values = c(2,4,1))+ylim(0,1)+
   ggtitle("CRF of microbiome subpopulations")+xlab("Taxa sorted by count")+ylab("Cumulative Relative Frequncy")
-# ggsave("Ecdf_Micro.png" ,height = 5,width = 8)          
-# ggsave("Ecdf_Micro.tiff",height = 5,width = 8)          
-# ggsave("Ecdf_Micro.pdf" ,height = 5,width = 8)          
+#ggsave("Ecdf_Micro_50k_betaok.png" ,height = 5,width = 8)          
+#ggsave("Ecdf_Micro_50k_betaok.tiff",height = 5,width = 8)          
+#ggsave("Ecdf_Micro_50k_betaok.pdf" ,height = 5,width = 8)          
 
 
 ggplot(LL2)+
@@ -264,8 +265,15 @@ plot(OT_r2[,cl1$cl==3]/sum(OT_r2[,cl1$cl==3]),type="h")
 Names[c(58)]
 (OT_r2[,cl1$cl==3]/sum(OT_r2[,cl1$cl==3]))[86]
 
+
+
+
+
+
+
+
 # 2 Observational Clusters Analysis --------------------------------------------------
-NSIM = 100000
+NSIM = 50000
 CSI <- R$Csi_ij
 
 ALL_micr_label <- array(NA,c(ncol(OT_r2),nrow(OT_r2),NSIM))
@@ -274,15 +282,15 @@ for(i in 1:NSIM){
 }
 ALL_micr_label[,,1]
 
-index1 = which(cl1V$cl==1)
-L1 <- length(index1)
-ALL_micr_label1 <- array(NA,c(L1,N_r,NSIM))
-for(i in 1:NSIM){
-  ALL_micr_label1[,,i] <- ALL_micr_label[index1,,i] 
-}
-index2 = which(cl1V$cl==2)
-L2 <- length(index2)
-ALL_micr_label2 <- array(NA,c(L2,N_r,NSIM))
+# index1 = which(cl1V$cl==1)
+# L1 <- length(index1)
+# ALL_micr_label1 <- array(NA,c(L1,N_r,NSIM))
+# for(i in 1:NSIM){
+#   ALL_micr_label1[,,i] <- ALL_micr_label[index1,,i] 
+# }
+# index2 = which(cl1V$cl==2)
+# L2 <- length(index2)
+# ALL_micr_label2 <- array(NA,c(L2,N_r,NSIM))
 J <- 38
 N_r <- 119
 
@@ -291,6 +299,13 @@ ZMic <- matrix(unlist(R$Csi_ij),NSIM,N_r*J,byrow = T)
 ZMic <- t(apply(ZMic,1,reset))
 psm <- mcclust::comp.psm(ZMic)
 clmic  <- mcclust.ext::minVI(psm)
+saveRDS(psm,"coclusteringmatrix_microb_observlevel.RDS")
+saveRDS(clmic,"clustering_microb_observlevel.RDS")
+
+psm <- readRDS("coclusteringmatrix_microb_observlevel.RDS")
+clmic <- readRDS("clustering_microb_observlevel.RDS")
+
+
 
 # Descriptive results
 plot(R$y_obser~clmic$cl)
@@ -345,9 +360,9 @@ ggplot(Aa)+
             col='black', size=4)+
   geom_vline(xintercept = c(3.5,5.5),lty=3)+
   ggtitle("OTU abundance stratified by Observational Cluster")
-# ggsave("Boxplots_OC.png" ,height = 5,width = 8)          
-# ggsave("Boxplots_OC.tiff",height = 5,width = 8)          
-# ggsave("Boxplots_OC.pdf" ,height = 5,width = 8)          
+# ggsave("Boxplots_OC_50k_betao.png" ,height = 5,width = 8)          
+# ggsave("Boxplots_OC_50k_betao.tiff",height = 5,width = 8)          
+# ggsave("Boxplots_OC_50k_betao.pdf" ,height = 5,width = 8)          
 
 
 MM <- ifelse(MM==1|MM==2|MM==3,"Low",
@@ -429,15 +444,15 @@ net = network(COOC_red>.5,
 
 
 # network plot
-ggnet2(net = net,
-       alpha = 1, mode = "circle",#, layout.par = list(cell.jitter = 1),
-       color = col1,
-       palette = viridis::magma(12),node.size = 10,
-       #node.color = med_clust,
-       label.size = 5,label=Names_red,
-       node.alpha = .8,
-       edge.alpha = .8,legend.position = "bottom")
-# for more inspiration, look at
+# GGally::ggnet2(net = net,
+#        alpha = 1, mode = "circle",#, layout.par = list(cell.jitter = 1),
+#        color = col1,
+#        palette = viridis::magma(12),node.size = 10,
+#        #node.color = med_clust,
+#        label.size = 5,label=Names_red,
+#        node.alpha = .8,
+#        edge.alpha = .8,legend.position = "bottom")
+# # for more inspiration, look at
 # https://kateto.net/network-visualization
 
 idx_low  <- which(apply(MMnum,1,median)<=1)#which(MM2[1,]==38)
@@ -462,7 +477,7 @@ col2 <- ifelse(col2==1,"Low",ifelse(col2==2,"Medium","High"))
 col1 <- factor(col1,levels = c("Low","Medium","High"))
 col2 <- factor(col2,levels = c("Low","Medium","High"))
 
-n1 <- ggnet2(net = net1,
+n1 <- GGally::ggnet2(net = net1,
              alpha = 1, mode = "kamadakawai",#, layout.par = list(cell.jitter = 1),
              color = col1,palette = "Set1",
              node.size = 15,
@@ -472,11 +487,11 @@ n1 <- ggnet2(net = net1,
              node.alpha = .8,legend.position = "top",
              edge.alpha = .8)
 n1
-#ggsave("N1.png" ,height = 8,width = 10)
-#ggsave("N1.tiff",height = 8,width = 10)
-#ggsave("N1.pdf" ,height = 8,width = 10)
+ggsave("N1.png" ,height = 10,width = 15)
+ggsave("N1.tiff",height = 10,width = 15)
+ggsave("N1.pdf" ,height = 10,width = 15)
 
-n2 <- ggnet2(net = net2,
+n2 <- GGally::ggnet2(net = net2,
              alpha = 1, mode = "kamadakawai",#mode = "circle",#, layout.par = list(cell.jitter = 1),
              color = col2,
              color.legend = "DC-2 - Modal Abundance Class",
@@ -487,9 +502,9 @@ n2 <- ggnet2(net = net2,
              node.alpha = .8,
              edge.alpha = .8,legend.position = "top")#+theme(panel.background = element_rect(color = "grey"))
 n2
-#ggsave("N2.png" ,height = 8,width = 10)
-#ggsave("N2.tiff",height = 8,width = 10)
-#ggsave("N2.pdf" ,height = 8,width = 10)
+ggsave("N2_50k_betaok.png" ,height = 10,width = 15)
+ggsave("N2_50k_betaok.tiff",height = 10,width = 15)
+ggsave("N2_50k_betaok.pdf" ,height = 10,width = 15)
 
 #n1+n2
 

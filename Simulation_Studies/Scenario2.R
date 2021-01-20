@@ -5,8 +5,8 @@
   library(scales)
   library(mcclust)
   library(parallel)
-  sourceCpp("CommonAtomModel functions/CAM/CAM.cpp")
-  source("CommonAtomModel functions/CAM/CAM.R")
+  sourceCpp("CommonAtomModel/Functions/CAM/CAM.cpp")
+  source("CommonAtomModel/Functions/CAM/CAM.R")
   ##################################################################################
   # Data generation ---------------------------------------------------------
   set.seed(1234568)
@@ -44,13 +44,13 @@
           a_alpha=3, b_alpha = 3,
           a_beta =3, b_beta = 3 ),
         NSIM = 50000,burn_in = 50000,thinning = 1,
-        verbose.step = 500,fixedAB = F,
+        verbose.step = 50000,fixedAB = F,
         kappa=0.5,cheap=T,seed=1324354
         )
   }
   
   R <- mclapply(1:6,parallel.CAM,mc.cores = 6)
-  saveRDS(R,"Scenario_2_CAMoutput.RDS")
+  saveRDS(R,"Scenario_2_CAMoutput_betaok.RDS")
   
   # Distributional Clustering -----------------------------------------------
   
@@ -62,7 +62,7 @@
   PSMs <- map(DF_Z, ~comp.psm(.x))
   D_CLs  <- map(PSMs, ~mcclust.ext::minVI(.x,method = "greedy")$cl)
   D_CLs
-  saveRDS(D_CLs,"Scenario_2_DistributionalClustering.RDS")
+  saveRDS(D_CLs,"Scenario_2_DistributionalClustering_betaok.RDS")
   
   plot(YD[[1]],col=YG[[1]])
   
@@ -74,7 +74,7 @@
   
   PSMs_2 <- map(DF_Csi, ~comp.psm(.x))
   O_CLs  <- map(PSMs_2, ~mcclust.ext::minVI(.x)$cl)
-  saveRDS(O_CLs,"Scenario_2_DistributionalClustering.RDS")
+  saveRDS(O_CLs,"Scenario_2_DistributionalClustering_betaok.RDS")
   
   plot(YD[[1]],col=O_CLs[[1]])
   plot(YD[[5]],col=O_CLs[[5]])

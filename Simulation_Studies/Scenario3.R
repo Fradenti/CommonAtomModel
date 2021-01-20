@@ -4,8 +4,8 @@ library(Rcpp)
 library(tidyverse)
 library(mcclust)
 library(parallel)
-sourceCpp("CommonAtomModel functions/DCAM/DCAM.cpp")
-source("CommonAtomModel functions/DCAM/DCAM.R")
+sourceCpp("CommonAtomModel/Functions/DCAM/DCAM.cpp")
+source("CommonAtomModel/Functions/DCAM/DCAM.R")
 # Creation of parallelizable function -------------------------------------
 parallel.DCAM <- function(i){
   DCAM(y_obser = YD[[i]],y_group = YG[[i]],
@@ -53,7 +53,7 @@ plot(YD[[6]],col=YG[[6]])
 # Setting up the model -----------------------------------------------------
 
 DCAM_Res <- mclapply(1:6,parallel.DCAM,mc.cores = 6)
-saveRDS(DCAM_Res,"Scenario3_DCAMoutput.RDS")
+saveRDS(DCAM_Res,"Scenario3_DCAMoutput_betaok.RDS")
 
 # Distributional Clustering -----------------------------------------------
 
@@ -66,7 +66,7 @@ PSMs <- map(DF_Z, ~comp.psm(.x))
 D_CLs  <- map(PSMs, ~mcclust.ext::minVI(.x)$cl)
 D_CLs  <- map(PSMs, ~mcclust.ext::minVI(.x,method = "greedy")$cl)
 D_CLs
-saveRDS(D_CLs,"Scenario_3_DistributionalClustering.RDS")
+saveRDS(D_CLs,"Scenario_3_DistributionalClustering_betaok.RDS")
 
 
 
@@ -78,7 +78,7 @@ for(i in 1:6){
 
 PSMs_2 <- map(DF_Csi, ~comp.psm(.x))
 O_CLs  <- map(PSMs_2, ~mcclust.ext::minVI(.x)$cl)
-saveRDS(O_CLs,"Scenario_3_ObservationalClustering.RDS")
+saveRDS(O_CLs,"Scenario_3_ObservationalClustering_betaok.RDS")
 
 plot(YD[[1]],col=O_CLs[[1]])
 plot(YD[[6]],col=O_CLs[[6]])

@@ -4,8 +4,8 @@ library(Rcpp)
 library(tidyverse)
 library(mcclust)
 library(parallel)
-sourceCpp("Functions/CAM/CAM.cpp")
-source("Functions/CAM/CAM.R")
+sourceCpp("CommonAtomModel/Functions/CAM/CAM.cpp")
+source("CommonAtomModel/Functions/CAM/CAM.R")
 # Creation of parallelizable function -------------------------------------
 parallel.CAM <- function(i){
   CAM(y_obser = YD[[i]],y_group = YG[[i]],
@@ -17,7 +17,7 @@ parallel.CAM <- function(i){
         a_alpha=3, b_alpha = 3,
         a_beta =3, b_beta = 3 ),
       NSIM = 50000,burn_in = 50000,thinning = 1,
-      verbose.step = 50,fixedAB = F,
+      verbose.step = 50000,fixedAB = F,
       kappa=0.5,cheap=T,seed=123456
   )
 }
@@ -53,7 +53,7 @@ plot(YD[[2]],col=YG[[2]])
 plot(YD[[3]],col=YG[[3]])
 
 S1_A <- mclapply(1:3,parallel.CAM,mc.cores = 3)
-saveRDS(S1_A,"Scenario_1A_CAMoutput.RDS")
+saveRDS(S1_A,"Scenario_1A_CAMoutput_betaok.RDS")
 
 # Distributional Clustering -----------------------------------------------
 
@@ -66,7 +66,7 @@ PSMs <- map(DF_Z, ~comp.psm(.x))
 #D_CLs  <- map(PSMs, ~mcclust.ext::minVI(.x)$cl)
 D_CLsA  <- map(PSMs, ~mcclust.ext::minVI(.x,method = "greedy")$cl)
 D_CLsA
-saveRDS(D_CLsA,"Scenario_1A_DistributionalClustering.RDS")
+saveRDS(D_CLsA,"Scenario_1A_DistributionalClustering_betaok.RDS")
 
 
 
@@ -78,7 +78,7 @@ for(i in 1:3){
 
 PSMs_2 <- map(DF_Csi, ~comp.psm(.x))
 O_CLsA  <- map(PSMs_2, ~mcclust.ext::minVI(.x)$cl)
-saveRDS(O_CLsA,"Scenario_1A_ObservationalClustering.RDS")
+saveRDS(O_CLsA,"Scenario_1A_ObservationalClustering_betaok.RDS")
 
 
 
@@ -132,7 +132,7 @@ plot(YD[[3]],col=YG[[3]])
 # Settin up the model -----------------------------------------------------
 
 S1_B <- mclapply(1:3,parallel.CAM,mc.cores = 3)
-saveRDS(S1_B,"Scenario_1B_CAMoutput.RDS")
+saveRDS(S1_B,"Scenario_1B_CAMoutput_betaok.RDS")
 
 # Distributional Clustering -----------------------------------------------
 
@@ -145,7 +145,7 @@ PSMs <- map(DF_Z, ~comp.psm(.x))
 #D_CLs  <- map(PSMs, ~mcclust.ext::minVI(.x)$cl)
 D_CLs_B  <- map(PSMs, ~mcclust.ext::minVI(.x,method = "greedy")$cl)
 D_CLs_B
-saveRDS(D_CLs_B,"Scenario_1B_DistributionalClustering.RDS")
+saveRDS(D_CLs_B,"Scenario_1B_DistributionalClustering_betaok.RDS")
 
 
 
@@ -157,7 +157,7 @@ for(i in 1:3){
 
 PSMs_2 <- map(DF_Csi, ~comp.psm(.x))
 O_CLsB  <- map(PSMs_2, ~mcclust.ext::minVI(.x)$cl)
-saveRDS(O_CLsB,"Scenario_1B_ObservationalClustering.RDS")
+saveRDS(O_CLsB,"Scenario_1B_ObservationalClustering_betaok.RDS")
 
 plot(YD_B[[3]],col=O_CLsB[[3]])
 
