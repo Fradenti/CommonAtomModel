@@ -5,6 +5,27 @@ using namespace Rcpp;
 
 
 ///////////////////////////////////////////////////// Useful
+// [[Rcpp::export]]
+arma::mat PSM(arma::mat inds){
+  int nsim = inds.n_rows;
+  int n= inds.n_cols;
+  arma::mat PSM(n,n), D(n,n); 
+  D.eye(); PSM.zeros();
+  
+  for(int i=0; i<n; i++){
+    for(int j=i+1; j<n; j++){
+    arma::colvec Z = (inds.col(i)-inds.col(j));
+    arma::uvec success = find(Z==0);
+    PSM(i,j) = success.n_elem;
+    PSM(j,i) = PSM(i,j);
+    }
+  }
+  
+  return(PSM/nsim + D);
+  
+}
+
+
 double rt_cpp(double nu, double lambda){
   double TAA;
   TAA = R::rnorm(lambda,1.0) / exp(.5*log( R::rchisq(nu)/nu ));
@@ -27,10 +48,10 @@ arma::colvec SB_given_u2(arma::colvec V) {
 arma::colvec Update_Distributional_Sticks(arma::colvec zj, 
                         int NN_z, double alpha){
   arma::colvec v_z(NN_z);
-  for(int j=0; j<(NN_z-1); j++){
+  for(int j=0; j<(NN_z); j++){
     v_z[j] = R::rbeta(1 + accu(zj == (j+1)), alpha + accu(zj > (j+1)) );
   }
-  v_z[NN_z-1] =1.;
+  //v_z[NN_z-1] =1.;
   return v_z; 
 }
 
@@ -49,11 +70,12 @@ arma::mat Update_omega(arma::colvec cij,
   
   for(int jj=0; jj<NN_z; jj++){
     for(int ii=0; ii<NN_c;  ii++){
-      v_omega(ii,jj) = R::rbeta( 1 + accu(zj_pg_cpp == jj && cij_cpp == ii),
-              beta + accu(zj_pg_cpp == jj && cij_cpp > ii));
+      v_omega(ii,jj) = 
+          R::rbeta( 1 + accu(zj_pg_cpp == jj && cij_cpp == ii),
+                 beta + accu(zj_pg_cpp == jj && cij_cpp >  ii));
     }
-    v_omega(NN_c-1,jj) = 1.; // new line
-    omega.col(jj) = SB_given_u2(v_omega.col(jj));
+   // v_omega(NN_c-1,jj) = 1.; // new line
+    omega.col(jj)      = SB_given_u2(v_omega.col(jj));
   }
   return(omega); 
 }
@@ -139,8 +161,11 @@ arma::mat Update_Cij( arma::colvec y_obser,
   
   for(int i=0; i<N; i++){
     for(int k=0; k<NN_c; k++){
-      p[k] = log(xi_c[k] > Uij[i]) + log(omega(k,zj_pg[i]-1)) +  
-        R::dnorm(y_obser[i], theta(k,0), sqrt(theta(k,1)), 1) - log(xi_c[k]);    
+      p[k] = 
+        log(xi_c[k] > Uij[i]) + 
+        log(omega(k,zj_pg[i]-1)) +  
+        R::dnorm(y_obser[i], theta(k,0), sqrt(theta(k,1)), 1) - 
+        log(xi_c[k]);    
     }
     
     if(arma::is_finite(max(p))){
@@ -166,14 +191,19 @@ arma::mat Update_theta(arma::colvec y_obser,
                    int NN_c, int J){
   arma::colvec cij_cpp = cij -1 ;
   arma::mat theta(NN_c,2);
+  
   double ybar_i, ss_i;
   double astar, bstar, mustar, kstar;
+  
   for(int i = 0; i<NN_c; i++ ){
     arma::uvec   ind = find(cij_cpp==i);
     arma::colvec YYY = y_obser.elem(ind);
+    
     int          n_i = YYY.n_elem;
     if(n_i > 0) {  ybar_i = mean(YYY);} else {ybar_i = 0;}
+    
     if(n_i > 1) {  ss_i   = accu( pow((YYY-ybar_i),2) );} else {ss_i = 0;}
+    
       astar = (a0 + n_i / 2);
       bstar = b0 + .5 * ss_i + ((k0 * n_i) * (ybar_i - m0)* (ybar_i - m0))  / ( 2 * (k0+n_i) );
       theta(i,1) = 1 / rgamma(1, astar, 1/bstar)[0];
@@ -188,5 +218,76 @@ arma::mat Update_theta(arma::colvec y_obser,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // Update Cij
+  // [[Rcpp::export]]
+  arma::colvec Update_ZjCij( arma::colvec y_obser,
+                        arma::colvec y_group,
+                        arma::colvec Uj,  
+                        arma::colvec Uij,
+                        arma::colvec xi_z, 
+                        arma::colvec xi_c,
+                        arma::mat omega,
+                        arma::mat theta,
+                        int N, int NN_c,
+                        arma::colvec pi_z,
+                        int NN_z, int J){
+    int all = NN_c * NN_z ;
+    arma::colvec possible_label = arma::linspace<arma::vec>(1, all, all);
+    arma::colvec IND(N);
+    arma::mat p(NN_c,NN_z);
+    arma::colvec Mij(N), Zj(J);
+    
+    
+    
+    for(int i=0; i<N; i++){
+      int q = y_group[i]-1;
+      for(int l=0; l<NN_z; l++){
+        
+        double Prob_L = log(pi_z[l]) + log( xi_z[l] >  Uj[q] ) - log(xi_z[l]) ;
+        
+        for(int k=0; k<NN_c; k++){
+          
+          double log_prob_Normal = R::dnorm(y_obser[i], theta(k,0), sqrt(theta(k,1)), 1);
+          
+          
+          p(k,l) = 
+            log( xi_c[k] > Uij[i] ) +   log(omega(k,l))  - 
+            log(xi_c[k]) + Prob_L + log_prob_Normal;
+        }
+      }
+      arma::colvec longp = p.as_col();
+      
+      
+      if(arma::is_finite(max(longp))){
+        arma::colvec pp = exp(longp-max(longp));
+        IND(i) = RcppArmadillo::sample(possible_label, 1, 1, pp)[0];
+      }else{
+        IND(i) = RcppArmadillo::sample(possible_label, 1, 1)[0];
+      }
+      
+    }
+    
+    return(IND);
+  }
 
 
