@@ -41,9 +41,8 @@ posterior.densities <- function(m1,howfarback, normalize=T, xx){
 g_slice <- function(j, kappa) {
   (1 - kappa) * kappa ^ (j - 1)
 }
-#
-#Rcpp::sourceCpp("Functions/CAM/CAM.cpp")
-#
+
+
 log_post_beta <- function(beta, Lk, n_j, K.star, ab,bb){
   K.star*lgamma(beta) -  sum(lgamma(beta + n_j)) + 
     ( sum(Lk+ ab-1) ) * log(beta) - bb*beta
@@ -145,6 +144,7 @@ CAM <- function(y_obser,                         # Observations, organized into
     DENS <- array(0,c(nx,J,nsim)) 
   }else{
     DENS <- NA
+    xx   <- NA
   }
   #####################################################################################
   # Warmstart observational/distributional clusters
@@ -332,7 +332,7 @@ CAM <- function(y_obser,                         # Observations, organized into
                 y_obser=y_obser, y_group=y_group, nsim=nsim, prior = prior,Sigma.beta=Sigma.beta)
   }else{
     out <- list(Z_j=Z_j, Csi_ij=Csi_ij, PI=PI, THETA=THETA, 
-                A_DP=ALPHA_DP, B_DP=BETA_DP,NN.cz=NN.cz,post.dens=DENS,
+                A_DP=ALPHA_DP, B_DP=BETA_DP,NN.cz=NN.cz,post.dens=DENS,xx=xx,
                 OMEGA=OMEGA,  y_obser=y_obser, y_group=y_group, nsim=nsim,Sigma.beta=Sigma.beta, prior = prior)
     
     

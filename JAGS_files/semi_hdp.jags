@@ -1,0 +1,89 @@
+model {
+
+for (i in 1:numGroups) {
+  for (j in 1:num_samples[i]) {
+    y[i, j] ~ dnorm(means[rho[i], s[rho[i], i, j]], 1 / (sigma[rho[i], s[rho[i], i, j]] ^ 2))
+    for (k in 1:numGroups) {
+      s[k, i, j] ~ dcat(weights[k, ])
+    }
+  }
+}
+
+# population level groups
+for (i in 1:numGroups) {
+  probas[i] <- 1
+}
+
+for (i in 1:numGroups) {
+  rho[i] ~ dcat(probas[])
+} 
+
+/* for (i in 1:numGroups) {
+  rho[i] <- i
+} */
+
+#### Dirichlet Processes ####
+sigmaH ~ dunif(0, 1.5)
+tauH <- 1 / sigmaH^2
+
+# Gtilde
+mu00 = 0
+gamma00 = 1
+lambda00 ~ dunif(0, 2)
+for (h in 1:H) {
+  GtildeAtomSigma[h] ~ dunif(0, 2)
+  GtildeAtomMeans[h] ~ dnorm(mu00, 1 / (GtildeAtomSigma[h]^2 * lambda00))
+}
+
+for (h in 1:(H-1)) {
+  nu00[h] ~ dbeta(1, gamma00)
+}
+
+weights00[1] <- nu00[1]
+for (h in 2:(H-1)) {
+  weights00[h] <- nu00[h] * (1 - nu00[h-1]) * weights00[h-1] / nu00[h-1]
+}
+
+for (h in 1:H) {
+  comp00[h] ~ dcat(weights00[])
+  means00[h] = GtildeAtomMeans[comp00[h]]
+  sigma00[h] = GtildeAtomSigma[comp00[h]]
+}
+
+w ~ dunif(0,1)
+wComp ~ dbern(w)
+# atoms
+for (i in 1:numGroups) {
+  for (h in 1:H) {
+    comp[i, h] ~ dbern(w)
+    t[i, h] ~ dcat(weights00[])
+    sigmaG0[i, h] ~ dunif(0, 2)
+    meansG0[i, h] ~ dnorm(mu0, 1 / (sigmaG0[i, h]^2 * lambda))
+
+    means[i, h] <- comp[i, h] * meansG0[i, h] + (1 - comp[i, h]) * GtildeAtomMeans[t[i, h]]
+    sigma[i, h] <- comp[i, h] * sigmaG0[i, h] + (1 - comp[i, h]) * GtildeAtomSigma[t[i, h]]
+ 
+  }
+}
+
+lambda ~ dunif(0, 2)
+mu0 ~ dnorm(0, tauH)
+gam <- 0.5 + gam0
+gam0 ~ dgamma(2, 2)
+
+# weights
+for (i in 1:numGroups) {
+  for (h in 1:(H-1)) {
+    v[i, h] ~ dbeta(1, gam)
+  }
+}
+
+for (i in 1:numGroups) {
+  weights[i, 1] <- v[i, 1]
+  for (h in 2 : (H-1)) {
+    weights[i, h] <- v[i, h] * (1 - v[i, h-1]) * weights[i, h-1]/v[i, h-1]
+  }
+  weights[i, H] <- 1 - sum(weights[i, 1:(H-1)])
+}
+
+} # end model

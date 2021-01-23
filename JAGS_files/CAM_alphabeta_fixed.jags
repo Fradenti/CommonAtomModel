@@ -1,0 +1,56 @@
+model {
+
+for (i in 1:n) {
+  for (j in 1:J) {
+    y[i, j] ~ dnorm(theta_k[Mij[i,j],1],theta_k[Mij[i,j],2])
+  }
+}
+
+for(j in 1:J){
+  zj[j] ~ dcat(pi[1:L])
+}
+
+
+for(i in 1:n){
+  for(j in 1:J){
+  Mij[i,j] ~ dcat(omega[1:K,zj[j]])
+  }
+}
+
+# weights SB - 1 
+
+  for (l in 1:(L-1)) {
+    v1[l] ~ dbeta(1, alpha)
+  }
+
+  pi[1] <- v1[1]
+  for (l in 2:(L-1)) {
+    pi[l] <- v1[l] * (1 - v1[l-1]) * pi[l-1]/v1[l-1]
+  }
+  pi[L] <- 1 - sum(pi[1:(L-1)])
+  
+
+
+# weights SB 2
+
+for (l in 1:L) {
+  for (k in 1:(K-1)) {
+    v2[k, l] ~ dbeta(1, beta)
+  }
+}
+
+for (l in 1:L) {
+  omega[1, l] <- v2[1, l]
+  for (k in 2 : (K-1)) {
+    omega[k, l] <- v2[k, l] * ( 1 - v2[k-1, l] ) * omega[k-1, l]/v2[k-1, l]
+  }
+  omega[K, l] <- 1 - sum(omega[1:(K-1),l])
+}
+
+
+for(k in 1:K){
+ theta_k[k,1] ~ dnorm(m_prior, k_prior * theta_k[k,2]) # NIG w/ precision
+ theta_k[k,2] ~ dgamma(a_prior,b_prior) # precisions
+}
+
+} # end model
