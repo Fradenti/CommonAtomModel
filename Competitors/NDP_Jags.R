@@ -21,7 +21,7 @@ parallel_NDPJags_i_S1a_K <- function(i,Yall,path,K){
   update(model.fit_basic, 5000)
   t1 <- Sys.time()
   out <- jags.samples(model.fit_basic,
-                      c('Mij', 'zj',"theta_l"),
+                      c('Mij', 'zj',"theta_lk"),
                       10000)
   t2 <- Sys.time()
   saveRDS(
@@ -82,7 +82,10 @@ mclapply(1:30,parallel_NDPJags_i_S1a_K,
 
 
 
-
+library(parallel)
+library("rjags")
+library(MCMCvis)
+rjags::load.module("glm")
 
 
 # Let us start with 30 datasets -------------------------------------------
@@ -115,7 +118,7 @@ parallel_NDPJags_i_S2_K <- function(i,Yall,path,K){
   t1 <- Sys.time()
   out <- jags.samples(model.fit_basic,
                       c('Mij', 'zj'),
-                      100000)
+                      10000)
   t2 <- Sys.time()
   saveRDS(
     list(model=out,time=t2-t1),

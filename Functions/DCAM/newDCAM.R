@@ -13,7 +13,7 @@ library(scales)
 
 
 
-posterior.densities <- function(m1,howfarback, normalize=T, xx){
+posterior.densities.DCAM <- function(m1,howfarback, normalize=T, xx){
   L    <- list()
   J    <- length(m1$Z_j[1,])
   nsim <- length(m1$A_DP)
@@ -27,10 +27,10 @@ posterior.densities <- function(m1,howfarback, normalize=T, xx){
       }
       
       dens <- t(apply(m1$THETA[[nsim-i]],1,
-                      function(z) dnorm(xx,z[1],sqrt(z[2])) ))
+                      function(z) vec_log_Likelihood(xx,z)) )
       
-      mixcomp <- w*dens
-      mix[i,] <-   colSums(mixcomp)
+      mixcomp <- w*exp(dens)
+      mix[i,] <- colSums(mixcomp)
     }
     L[[h]] <- mix
     cat(h)
@@ -61,7 +61,7 @@ MH.beta <- function(beta, Lk, mlk, K.star,ab,bb,sigma.prop){
   acc          <- 0
   
   alpha <- log_post_LOGbeta(LOGbeta = new.log.beta, Lk = Lk, n_j = mlk, K.star = K.star, ab = ab,bb = bb)-
-           log_post_LOGbeta(LOGbeta = old.log.beta, Lk = Lk, n_j = mlk, K.star = K.star, ab = ab,bb = bb)
+    log_post_LOGbeta(LOGbeta = old.log.beta, Lk = Lk, n_j = mlk, K.star = K.star, ab = ab,bb = bb)
   
   if(runif(1)<exp(alpha)){
     beta <- exp(new.log.beta)
@@ -84,7 +84,7 @@ reset <- function(x){
   return(z)
 }
 #######################################################################################################
-CAM <- function(y_obser,                         # Observations, organized into
+DCAM <- function(y_obser,                         # Observations, organized into
                 y_group,                         # Groups (numeric vector 1- First group-->J- J-th group)
                 K0=10, L0=20,                    # Starting number of groups
                 prior,                           # List of hyperparameters
@@ -127,6 +127,7 @@ CAM <- function(y_obser,                         # Observations, organized into
   theta                 <- matrix(NA, L0, 2)
   cij                   <- numeric(N)
   zj                    <- numeric(J)
+  y_lat                 <- numeric(N)
   BETA_DP               <- numeric(nsim); 
   ALPHA_DP              <- numeric(nsim)
   ACC                   <- numeric(batch)
@@ -148,14 +149,16 @@ CAM <- function(y_obser,                         # Observations, organized into
   }
   #####################################################################################
   # Warmstart observational/distributional clusters
-  km.out    <- kmeans(y_obser, L0)
+  y_lat     <- y_obser+runif(N)
+  km.out    <- kmeans(y_lat, L0)
   cij       <- km.out$cluster
-  theta[, 1]  <- tapply(y_obser, cij, mean)
-  theta[, 2]  <- tapply(y_obser, cij, sd)
+  
+  theta[, 1]  <- tapply(y_lat, cij, mean)
+  theta[, 2]  <- tapply(y_lat, cij, sd)
   if (K0 >= J) {
     zj        <- 1:J
   } else{
-    km.outZ   <- kmeans(tapply(y_obser, y_group, mean), K0)
+    km.outZ   <- kmeans(tapply(y_lat, y_group, mean), K0)
     zj        <- km.outZ$cluster
   }
   zj.pg    <- rep(zj, nj)
@@ -168,7 +171,7 @@ CAM <- function(y_obser,                         # Observations, organized into
   }else{
     alpha   <- rgamma(1, a_alpha, b_alpha)
     beta    <- rgamma(1, a_beta,  b_beta)
-        }
+  }
   #####################################################################################
   
   if (verbose) {
@@ -198,7 +201,7 @@ CAM <- function(y_obser,                         # Observations, organized into
     NN.c    <- max(c(L.c, J.c))
     xi.c    <- g_slice(1:NN.c,kappa)
     
-
+    
     ################################################################
     # Update Distributional Weights
     v.z  <-
@@ -220,7 +223,7 @@ CAM <- function(y_obser,                         # Observations, organized into
     )
     ################################################################
     # Update Atoms
-    theta <- Update_theta(y_obser = y_obser,
+    theta <- Update_theta(y_LAT = y_lat,
                           cij = cij,
                           a0 = a0,
                           b0 = b0,
@@ -228,10 +231,10 @@ CAM <- function(y_obser,                         # Observations, organized into
                           m0 = m0,
                           NN_c = NN.c,
                           J = J
-      )
+    )
     ################################################################
     # Update Labels
-    cij <- Update_Cij(y_obser = y_obser,
+    cij <- Update_Cij_DCAM(y_obser = y_obser,
                       Uij = Uij,
                       xi_c = xi.c,
                       omega = omega,
@@ -256,46 +259,34 @@ CAM <- function(y_obser,                         # Observations, organized into
     )
     ################################################################
     zj.pg <- rep(zj, nj)
-    
+    ################################################################
+    y_lat   <-
+      Update_latentY(
+        y_obser = y_obser,
+        cij = cij,
+        theta = theta,
+        N = N
+      )
     ################################################################
     if(!fixedAB){
-    
-    # Update alpha distributional DP - Escobar and West 1995
-    k      <- length(unique(zj))
-    logeta <- log(rbeta(1, alpha + 1, J))
-    Q      <- (a_alpha + k - 1) / (J * (b_alpha - logeta))
-    pi_eta <- Q / (1 + Q)
-    u <- runif(1)
-    if (u < pi_eta) {
-      alpha  <- rgamma(n = 1,
-                       shape = a_alpha + k,
-                       rate = b_alpha - logeta)
-    } else{
-      alpha  <- rgamma(n = 1,
-                       shape = a_alpha + k - 1,
-                       rate = b_alpha - logeta)
-    }
-    ################################################################
-    ################################################################
-    # Kz    <-  length(unique(zj.pg))
-    # n_j   <-  table(zj.pg)
-    # T_j   <-  tapply(cij, zj.pg, function(x) length(unique(x)))
-    # 
-    # BetaAcc  <- MH.beta(beta = beta, Lk = T_j, mlk = n_j, K.star = Kz,
-    #                  ab = a_beta, bb=b_beta,sigma.prop = sigma.prop.beta)
-    # 
-    # beta <- BetaAcc[1]
-    # 
-    # ACC[sim - ind * batch] = BetaAcc[2]
-    # if (((sim) %% batch) == 0) {
-    #   sigma.prop.beta       = exp(ifelse(mean(ACC) < .44, #optThresh,
-    #                           (log(sigma.prop.beta)       - min(
-    #                             0.01, 1 / sqrt(sim)
-    #                           )) , (log(sigma.prop.beta)       + min(
-    #                             0.01, 1 / sqrt(sim)
-    #                           ))))
-    #   ind <- ind + 1
-    # }
+      
+      # Update alpha distributional DP - Escobar and West 1995
+      k      <- length(unique(zj))
+      logeta <- log(rbeta(1, alpha + 1, J))
+      Q      <- (a_alpha + k - 1) / (J * (b_alpha - logeta))
+      pi_eta <- Q / (1 + Q)
+      u <- runif(1)
+      if (u < pi_eta) {
+        alpha  <- rgamma(n = 1,
+                         shape = a_alpha + k,
+                         rate = b_alpha - logeta)
+      } else{
+        alpha  <- rgamma(n = 1,
+                         shape = a_alpha + k - 1,
+                         rate = b_alpha - logeta)
+      }
+      ################################################################
+
     }
     ################################################################
     if (sim > burn_in & ((sim - burn_in) %% thinning == 0)) {
@@ -317,14 +308,13 @@ CAM <- function(y_obser,                         # Observations, organized into
             rowSums(matrix(rep(omega[,zj[jjj]],nx),
                            nrow = nx,byrow = T) * allnorm)
         }
-
+        
       }
     }
     if (verbose) {
       ipbar <- ipbar + 1
       setTxtProgressBar(pbar, ipbar)
     }
-   # cat(length(unique(zj)),"----",length(unique(cij)),"---",NN.z,"+++",NN.c,"\n")
   }
   if(cheap){
     out <- list(Z_j=Z_j, Csi_ij=Csi_ij,

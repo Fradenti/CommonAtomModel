@@ -50,7 +50,7 @@ for (l in 1:L) {
 for(l in 1:L){
  for(k in 1:K){
  theta_lk[l,k,2] ~ dgamma(a_prior,b_prior) # precisions
- theta_lk[l,k,1] ~ dnorm(m_prior, k_prior * theta_k[l,k,2]) # NIG w/ precision
+ theta_lk[l,k,1] ~ dnorm(m_prior, k_prior * theta_lk[l,k,2]) # NIG w/ precision
 }
 }
 

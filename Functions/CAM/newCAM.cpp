@@ -51,7 +51,7 @@ arma::colvec Update_Distributional_Sticks(arma::colvec zj,
   for(int j=0; j<(NN_z); j++){
     v_z[j] = R::rbeta(1 + accu(zj == (j+1)), alpha + accu(zj > (j+1)) );
   }
-  //v_z[NN_z-1] =1.;
+  //v_z[NN_z-1] =1.; memento: this is wrong
   return v_z; 
 }
 
@@ -146,7 +146,7 @@ arma::colvec Update_Zj_v2(arma::colvec Uj,    // uij collapsed
  */
 
 
-// Update Cij
+////////////////////////////////////////////////////////////////////// // Update Cij
 // [[Rcpp::export]]
 arma::mat Update_Cij( arma::colvec y_obser,
                                arma::colvec Uij,
@@ -183,7 +183,7 @@ arma::mat Update_Cij( arma::colvec y_obser,
 
 
 
-// Update theta
+////////////////////////////////////////////////////////////////////  Update theta
 // [[Rcpp::export]]
 arma::mat Update_theta(arma::colvec y_obser,
                    arma::colvec cij,
@@ -207,8 +207,8 @@ arma::mat Update_theta(arma::colvec y_obser,
       astar = (a0 + n_i / 2);
       bstar = b0 + .5 * ss_i + ((k0 * n_i) * (ybar_i - m0)* (ybar_i - m0))  / ( 2 * (k0+n_i) );
       theta(i,1) = 1 / rgamma(1, astar, 1/bstar)[0];
-      mustar    = (k0*m0+ybar_i*n_i)/(k0+n_i);
-      kstar     = k0 + n_i;
+      mustar     = (k0*m0+ybar_i*n_i)/(k0+n_i);
+      kstar      = k0 + n_i;
       theta(i,0) = rt_cpp(2*astar, 0.0) * sqrt(bstar/(kstar*astar))+mustar;  
     }
   return(theta);
@@ -234,10 +234,7 @@ arma::mat Update_theta(arma::colvec y_obser,
 
 
 
-
-
-
-
+/*
   // Update Cij
   // [[Rcpp::export]]
   arma::colvec Update_ZjCij( arma::colvec y_obser,
@@ -289,5 +286,5 @@ arma::mat Update_theta(arma::colvec y_obser,
     
     return(IND);
   }
-
+*/
 

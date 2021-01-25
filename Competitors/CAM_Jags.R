@@ -80,7 +80,10 @@ mclapply(1:30,parallel_CamJags_i_S1a_K,
 
 
 
-
+library(parallel)
+library("rjags")
+library(MCMCvis)
+rjags::load.module("glm")
 
 
 
@@ -115,7 +118,7 @@ parallel_CamJags_i_S2_K <- function(i,Yall,path,K){
   t1 <- Sys.time()
   out <- jags.samples(model.fit_basic,
                       c('Mij', 'zj'),
-                      100000)
+                      10000)
   t2 <- Sys.time()
   saveRDS(
     list(model=out,time=t2-t1),
