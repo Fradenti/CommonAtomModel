@@ -11,7 +11,7 @@ parallel_nHDPJags_i_S1a_K <- function(i,Yall,path,K){
   y <- matrix(Yall[[i]][[K]],K*25,12) # obs on rows and groups on cols
   dataList <- list(y=y,J=ncol(y),n=nrow(y),
                    L=30,K=30,R=30,
-                   alpha=1,beta=1,
+                   alpha=1,beta=1,gamma=1,
                    a_prior =3, b_prior=1,
                    m_prior = mean(Yall[[i]][[K]]), 
                    k_prior = 1/var(Yall[[i]][[K]]))
@@ -22,16 +22,16 @@ parallel_nHDPJags_i_S1a_K <- function(i,Yall,path,K){
   update(model.fit_basic, 5000)
   t1 <- Sys.time()
   out <- jags.samples(model.fit_basic,
-                      c('Mij', 'zj',"theta_lk"),
+                      c('Mij', 'zj'),
                       10000)
   t2 <- Sys.time()
   saveRDS(
     list(model=out,time=t2-t1),
-    paste0("Competitors/Results_nHDP/out_nHDP_S1a_n",K*25,"_",i,".RDS"))
+    paste0("Competitors/Results_hNDP/out_hNDP_S1a_n",K*25,"_",i,".RDS"))
 }
 # -------------------------------------------------------------------------
 
-path    <- "JAGS_files/nHDP_alphabeta_fixed.jags"
+path    <- "JAGS_files/hNDP_alphabeta_fixed.jags"
 
 # -------------------------------------------------------------------------
 
@@ -95,7 +95,7 @@ Oall_s2   <- ALL_s2[[3]]
 
 # -------------------------------------------------------------------------
 
-path    <- "JAGS_files/nHDP_alphabeta_fixed.jags"
+path    <- "JAGS_files/hNDP_alphabeta_fixed.jags"
 
 # -------------------------------------------------------------------------
 
@@ -121,7 +121,7 @@ parallel_nHDPJags_i_S2_K <- function(i,Yall,path,K){
   t2 <- Sys.time()
   saveRDS(
     list(model=out,time=t2-t1),
-    paste0("Competitors/Results_nHDP/out_nHDP_S2_J",J[K],"_",i,".RDS"))
+    paste0("Competitors/Results_hNDP/out_hNDP_S2_J",J[K],"_",i,".RDS"))
 }
 
 set.seed(12345)
