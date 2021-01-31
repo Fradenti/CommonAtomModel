@@ -42,8 +42,8 @@ Yall_s1a   <- ALL_s1a[[1]]
 Gall_s1a   <- ALL_s1a[[2]]
 Oall_s1a   <- ALL_s1a[[3]]
 set.seed(12345)
-mclapply(1:30,parallel_nHDPJags_i_S1a_K,
-         mc.cores = 30,Yall=Yall_s1a,path=path,K=1)
+mclapply(1:1,parallel_nHDPJags_i_S1a_K,
+         mc.cores = 1,Yall=Yall_s1a,path=path,K=1)
 set.seed(679)
 mclapply(1:30,parallel_nHDPJags_i_S1a_K,
          mc.cores = 30,Yall=Yall_s1a,path=path,K=2)
@@ -105,7 +105,7 @@ parallel_nHDPJags_i_S2_K <- function(i,Yall,path,K){
   y <- matrix(Yall[[i]][[K]],4*J[K],12) # obs on rows and groups on cols
   dataList <- list(y=y,J=ncol(y),n=nrow(y),
                    L=30,K=30,R=30,
-                   alpha=1,beta=1,
+                   alpha=1,beta=1,gamma=1,
                    a_prior =3, b_prior=1,
                    m_prior = mean(Yall[[i]][[K]]), 
                    k_prior = 1/var(Yall[[i]][[K]]))
