@@ -21,7 +21,8 @@ x1 <- replicate(1, c(rnorm(2*u,3),rnorm( 2*u,10,.5)))
 x2 <- replicate(3, c(rnorm(2*u,-5),rnorm(2*u,10)))
 x3 <- c(rnorm(2*u,3),rnorm( 2*u,10,.5),rnorm( 2*u,-5,.5),rnorm( 2*u,0,.5))
 
-yd <- round(c(x0,x1,x2,x3))
+#yd <- round(c(x0,x1,x2,x3))
+yd <- (c(x0,x1,x2,x3))
 yg <- rep(1:6,c(rep(4*u,5),8*u))
 plot(yd,col=yg)
 ```
@@ -29,7 +30,7 @@ plot(yd,col=yg)
 # Run the model
 
 ```{r}
-m1 <- DCAM(y_obser = yd,
+m1 <- CAM(y_obser = yd,
             y_group = yg,
             K0 = 20,
             L0 = 20,
@@ -48,8 +49,8 @@ m1 <- DCAM(y_obser = yd,
             fixedAB = F,
             kappa=0.5,
             cheap=F,
-            seed=123456,sigma.prop.beta = 1
-  )
+            seed=123456,
+           sigma.prop.beta = 1)
 
 m2 <- CAM(y_obser = yd,
             y_group = yg,
@@ -67,7 +68,7 @@ m2 <- CAM(y_obser = yd,
             burn_in = 5000,
             thinning = 1,
             verbose = T,
-            fixedAB = F,
+            fixedAB = T,
             kappa=0.5,
             cheap=F,
             seed=123456,sigma.prop.beta = 1
@@ -103,7 +104,7 @@ r1=PSM(m1$Z_j)
 image(r1)
 a1=mcclust.ext::minVI(r1,method = "greedy")
 plot(yd,col=rep(a1$cl,table(yg)))
-r=PSM(as.matrix(t(map_dfc(m2$Z_j, ~.x)  )))
+r=PSM(m2$Z_j)
 image(r)
 a=mcclust.ext::minVI(r)
 plot(yd,col=a$cl)
@@ -117,10 +118,10 @@ plot(yd,col=a$cl)
 # Densities
 
 ```{r, fig.width=15,fig.height=12}
-xx <- seq(-10,15,by = 1)
+xx <- seq(-10,15,by = .1)
 LLL <- list()
 
-LLL <- posterior.densities.DCAM(m1,howfarback = 1000,normalize = T,xx = seq(-10,15))
+LLL <- posterior.densities(m1,howfarback = 1000,normalize = T,xx = seq(-10,15,by = .10))
 par(mfrow=c(1,2))
 for(hh in 1:6){
 hist(yd[yg==hh],breaks = 30,freq=F, main="hist+mcmc+mean")

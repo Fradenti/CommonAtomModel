@@ -211,13 +211,21 @@ CAM <- function(y_obser,                         # Observations, organized into
     }
     ################################################################   
     # Update observational Weights
-    omega <- Update_omega(
-      cij = cij,
-      zj_pg = zj.pg,
-      NN_c = NN.c,
-      NN_z = NN.z,
-      beta = beta
-    )
+    # omega <- Update_omega(
+    #   cij = cij,
+    #   zj_pg = zj.pg,
+    #   NN_c = NN.c,
+    #   NN_z = NN.z,
+    #   beta = beta
+    # )
+    v.c <- Update_Observational_Sticks(
+        cij = cij,
+        zj_pg = zj.pg,
+        NN_c = NN.c,
+        NN_z = NN.z,
+        beta = beta
+      )
+    omega <- apply(v.c,2,SB_given_u2)
     ################################################################
     # Update Atoms
     theta <- Update_theta(y_obser = y_obser,
@@ -276,6 +284,18 @@ CAM <- function(y_obser,                         # Observations, organized into
                        rate = b_alpha - logeta)
     }
     ################################################################
+    UZJ         <- unique(zj)
+    Sbar        <- length(UZJ)
+    usedV       <- v.c[,UZJ]
+    Ms          <- tapply(cij, zj.pg, max)
+    one_m_usedV <- log(1-usedV)
+    
+    
+    astar <- a_beta + sum(Ms)
+    bstar <- b_beta - sum(sapply(1:Sbar, function(x)  sum(one_m_usedV[1:Ms[x],x])))
+    
+    beta <- rgamma(1,astar,bstar)
+    
     ################################################################
     # Kz    <-  length(unique(zj.pg))
     # n_j   <-  table(zj.pg)
