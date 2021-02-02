@@ -104,12 +104,12 @@ path    <- "JAGS_files/NDP_alphabeta_fixed.jags"
 ##########################
 parallel_NDPJags_i_S2_K <- function(i,Yall,path,K){
   J <- c(2,4,6)
-  y <- matrix(Yall[[i]][[K]],4*J[K],12) # obs on rows and groups on cols
+  y <- matrix(Yall[[i]][[J[K]]],40,4*J[K]) # obs on rows and groups on cols
   dataList <- list(y=y,J=ncol(y),n=nrow(y),
                    L=30,K=30,alpha=1,beta=1,
                    a_prior =3, b_prior=1,
-                   m_prior = mean(Yall[[i]][[K]]), 
-                   k_prior = 1/var(Yall[[i]][[K]]))
+                   m_prior = mean(Yall[[i]][[J[K]]]), 
+                   k_prior = 1/var(Yall[[i]][[J[K]]]))
   model.fit_basic <- jags.model(path,
                                 data=dataList,
                                 n.chains = 1,
