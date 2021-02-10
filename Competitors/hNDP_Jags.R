@@ -81,7 +81,10 @@ mclapply(1:30,parallel_nHDPJags_i_S1a_K,
 
 
 
-
+library(parallel)
+library("rjags")
+library(MCMCvis)
+rjags::load.module("glm")
 
 
 
@@ -104,7 +107,8 @@ parallel_nHDPJags_i_S2_K <- function(i,Yall,path,K){
   J <- c(2,4,6)
   y <- matrix(Yall[[i]][[J[K]]],40,4*J[K]) # obs on rows and groups on cols
   dataList <- list(y=y,J=ncol(y),n=nrow(y),
-                   L=30,K=30,alpha=1,beta=1,
+                   L=30,K=30,R=30,
+                   alpha=1,beta=1,gamma=1,
                    a_prior =3, b_prior=1,
                    m_prior = mean(Yall[[i]][[J[K]]]), 
                    k_prior = 1/var(Yall[[i]][[J[K]]]))
@@ -125,13 +129,13 @@ parallel_nHDPJags_i_S2_K <- function(i,Yall,path,K){
 
 set.seed(12345)
 mclapply(1:30,parallel_nHDPJags_i_S2_K,
-         mc.cores = 15,Yall=Yall_s2,path=path,K=1)
+         mc.cores = 30,Yall=Yall_s2,path=path,K=1)
 set.seed(54321)
 mclapply(1:30,parallel_nHDPJags_i_S2_K,
-         mc.cores = 15,Yall=Yall_s2,path=path,K=2)
+         mc.cores = 30,Yall=Yall_s2,path=path,K=2)
 set.seed(5555)
 mclapply(1:30,parallel_nHDPJags_i_S2_K,
-         mc.cores = 15,Yall=Yall_s2,path=path,K=3)
+         mc.cores = 30,Yall=Yall_s2,path=path,K=3)
 ####################################################################
 
 # Let us start with 30 datasets -------------------------------------------

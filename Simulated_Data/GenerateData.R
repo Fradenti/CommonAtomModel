@@ -3,6 +3,11 @@
 # Dataset created under three scenarios. Each object is a list containing 100 lists
 # Each of the 100 is a list of three datasets with an increasing number of observations
 
+# Useful to understand the structure:
+# ALL[[a]][[b]][[c]]
+# a = 1,2,3 either data, groups, or observational clusters
+# b = 1,...,100 one of the 100 configurations
+# c = 1,2,3 (or 6 in S2 and S3), one of the different sample sizes
 # Useful functions
 
 CaseA <- function(m,s=sqrt(.6),N){

@@ -6,8 +6,10 @@ output: html_document
 ---
 
 ```{r}
-Rcpp::sourceCpp("/home/fra/Documents/GitHub/CommonAtomModel/Functions/CAM/CAM.cpp")
-source("/home/fra/Documents/GitHub/CommonAtomModel/Functions/CAM/CAM_ord.R")
+library(tidyverse)
+library(coda)
+Rcpp::sourceCpp("/home/fra/Documents/GitHub/CommonAtomModel/Functions/CAM/newCAM.cpp")
+source("/home/fra/Documents/GitHub/CommonAtomModel/Functions/CAM/newCAM.R")
 ```
 
 # Data
@@ -15,19 +17,21 @@ source("/home/fra/Documents/GitHub/CommonAtomModel/Functions/CAM/CAM_ord.R")
 6 distribution osservate, 4 gruppi
 
 ```{r}
-u <- 30
+u  <- 30
 x0 <- replicate(1, c(rnorm(u,3),rnorm( 3*u,10,.5)))
 x1 <- replicate(1, c(rnorm(2*u,3),rnorm( 2*u,10,.5)))
 x2 <- replicate(3, c(rnorm(2*u,-5),rnorm(2*u,10)))
 x3 <- c(rnorm(2*u,3),rnorm( 2*u,10,.5),rnorm( 2*u,-5,.5),rnorm( 2*u,0,.5))
 
-#yd <- round(c(x0,x1,x2,x3))
 yd <- (c(x0,x1,x2,x3))
 yg <- rep(1:6,c(rep(4*u,5),8*u))
 plot(yd,col=yg)
+nb <- 10000
 ```
 
 # Run the model
+
+# fixed concentration
 
 ```{r}
 m1 <- CAM(y_obser = yd,
@@ -42,16 +46,20 @@ m1 <- CAM(y_obser = yd,
               # hyperparameters alpha and beta
               a_alpha=3, b_alpha =3,
               a_beta =3, b_beta = 3),
-            nsim = 5000,
-            burn_in = 5000,
+            nsim = nb,
+            burn_in = nb,
             thinning = 1,
-            verbose = T,
-            fixedAB = F,
+            verbose = F,
+            fixedAB = T,
             kappa=0.5,
             cheap=F,
-            seed=123456,
+            seed=12345,
            sigma.prop.beta = 1)
+```
 
+# MH marginal beta
+
+```{r}
 m2 <- CAM(y_obser = yd,
             y_group = yg,
             K0 = 20,
@@ -64,98 +72,134 @@ m2 <- CAM(y_obser = yd,
               # hyperparameters alpha and beta
               a_alpha=3, b_alpha =3,
               a_beta =3, b_beta = 3),
-            nsim = 5000,
-            burn_in = 5000,
+            nsim = nb,
+            burn_in = nb,
             thinning = 1,
-            verbose = T,
-            fixedAB = T,
+            verbose = F,
+            fixedAB = F,
             kappa=0.5,
             cheap=F,
-            seed=123456,sigma.prop.beta = 1
+            seed=123456,sigma.prop.beta = 1,
+            conditional.beta = F
   )
 ```
 
+# Gibbs conditional beta
 
 ```{r}
-par(mfrow=c(1,1))
-r <- apply(m1$post.dens,c(1,2),mean)
-matplot(r,type="l")
+m3 <- CAM(y_obser = yd,
+            y_group = yg,
+            K0 = 20,
+            L0 = 20,
+            prior = list(
+              # hyperparameters NIG
+              m0= mean(yd), 
+              k0=1/var(yd), 
+              a0=3, b0=1,
+              # hyperparameters alpha and beta
+              a_alpha=3, b_alpha =3,
+              a_beta =3, b_beta = 3),
+            nsim = nb,
+            burn_in = nb,
+            thinning = 1,
+            verbose = F,
+            fixedAB = F,
+            kappa=0.5,
+            cheap=F,
+            seed=123456,sigma.prop.beta = 1,
+            conditional.beta = T
+  )
 
 ```
+
 
 
 # Alpha e Beta
 
 ```{r}
-plot(ts(m1$A_DP)) 
-plot(ts(m2$A_DP)) 
-acf(m1$A_DP)
-pacf(m1$A_DP)
-plot(ts(m1$B_DP))  
-acf(m1$B_DP)
-pacf(m1$B_DP)
+plot(as.mcmc(m1$A_DP),main="M1") 
+plot(as.mcmc(m2$A_DP),main="M2") 
+plot(as.mcmc(m3$A_DP),main="M3") 
+par(mfrow=c(1,2))
+acf(m2$A_DP)
+pacf(m3$A_DP)
+par(mfrow=c(3,1))
+plot(as.mcmc(m1$B_DP),main="M1") 
+plot(as.mcmc(m2$B_DP),main="M2") 
+plot(as.mcmc(m3$B_DP),main="M3") 
+par(mfrow=c(1,2))
+acf( m2$B_DP)
+pacf(m3$B_DP)
 ```
 
 # Clustering
 
 ```{r}
-matplot(m1$NN.cz)
+par(mfrow=c(1,3))
+matplot(m1$NN.cz,type="l")
+matplot(m2$NN.cz,type="l")
+matplot(m3$NN.cz,type="l")
+
+par(mfrow=c(1,1))
+plot(density(m1$NN.cz[,1],type="l") ,col=1,lwd=2)
+lines(density(m2$NN.cz[,1],type="l"),col=2,lwd=2)
+lines(density(m3$NN.cz[,1],type="l"),col=3,lwd=2)
+plot(density(m1$NN.cz[,2],type="l") ,col=1,lwd=2) 
+lines(density(m2$NN.cz[,2],type="l"),col=2,lwd=2)
+lines(density(m3$NN.cz[,2],type="l"),col=3,lwd=2)
+```
+
+# Estimated partition
+
+```{r}
 r1=PSM(m1$Z_j)
 image(r1)
 a1=mcclust.ext::minVI(r1,method = "greedy")
 plot(yd,col=rep(a1$cl,table(yg)))
-r=PSM(m2$Z_j)
-image(r)
-a=mcclust.ext::minVI(r)
-plot(yd,col=a$cl)
-
-r=PSM(m2$Csi_ij)
-image(r)
-a=mcclust.ext::minVI(r)
-plot(yd,col=a$cl)
+r2=PSM(m2$Z_j)
+image(r2)
+a2=mcclust.ext::minVI(r2,method = "greedy")
+plot(yd,col=rep(a2$cl,table(yg)))
+r3=PSM(m3$Z_j)
+image(r3)
+a3=mcclust.ext::minVI(r3,method = "greedy")
+plot(yd,col=rep(a3$cl,table(yg)))
 ```
 
 # Densities
 
 ```{r, fig.width=15,fig.height=12}
+library(reshape2)
 xx <- seq(-10,15,by = .1)
 LLL <- list()
 
-LLL <- posterior.densities(m1,howfarback = 1000,normalize = T,xx = seq(-10,15,by = .10))
-par(mfrow=c(1,2))
-for(hh in 1:6){
-hist(yd[yg==hh],breaks = 30,freq=F, main="hist+mcmc+mean")
-for(i in 1:1000)
-lines(LLL[[hh]][i,]~xx,col=1)
-lines(colMeans(LLL[[hh]])~xx,col=2,lwd=3)
+LLL1 <- posterior.densities(m1,howfarback = 100,normalize = T,xx = seq(-10,15,by = .10))
+D    <- melt(LLL1)
+p1 <- ggplot(D)+
+  geom_line(aes(x=Var2,y=value,group=interaction(Var1,L1),col=factor(L1)),alpha=.25)+
+  theme_bw()+scale_color_viridis_d()
+LLL2 <- posterior.densities(m2,howfarback = 100,normalize = T,xx = seq(-10,15,by = .10))
+D <- melt(LLL2)
+p2 <- ggplot(D)+
+  geom_line(aes(x=Var2,y=value,group=interaction(Var1,L1),col=factor(L1)),alpha=.25)+
+  theme_bw()+scale_color_viridis_d()
+LLL3 <- posterior.densities(m3,howfarback = 100,normalize = T,xx = seq(-10,15,by = .10))
+D <- melt(LLL3)
+p3 <- ggplot(D)+
+  geom_line(aes(x=Var2,y=value,group=interaction(Var1,L1),col=factor(L1)),alpha=.25)+
+  theme_bw()+scale_color_viridis_d()
+library(patchwork)
 
-hist(yd[yg==hh],breaks = 30,freq=F, main="hist+mean")
-lines(colMeans(LLL[[hh]])~xx,col=2,lwd=3)
-}
-
-
-# sim <- 500
-# ind <- 500
-# ygind <- yg[[ind]]
-# 
-# plot(yd)
-# points(yd[ind]~c(ind),col=2,pch=21,bg=2)
-# 
-# mat <- matrix(NA,nsim,2)
-# for(sim in 2:nsim){
-# 
-# mat[sim,1] <- m1$OMEGA[[sim]][ m1$Csi_ij[[sim]][ind] 
-#                  ,
-#                   m1$Z_j[[sim]]  [ygind]]
-# mat[sim,2] <- m1$THETA[[sim]][ m1$Csi_ij[[sim]][ind] 
-#                  ,
-#                  1]
-# }
-# 
-# plot(ts(mat))
-
-
-
-
+p1/p2/p3
 ```
 
+
+```{r}
+par(mfrow=c(3,1))
+r1 <- apply(m1$post.dens,c(1,2),mean)
+matplot(r1,type="l",main="M1")
+r2 <- apply(m2$post.dens,c(1,2),mean)
+matplot(r2,type="l",main="M2")
+r3 <- apply(m3$post.dens,c(1,2),mean)
+matplot(r3,type="l",main="M3")
+```

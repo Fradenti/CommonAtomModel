@@ -74,7 +74,8 @@ DCAM_LibSize <- function(y_obser,                         # Observations, organi
                          post.dens = T,
                          alpha.fixed = 1,
                          beta.fixed = 1,
-                         Wgamma=1, User.defined.gammas=NULL) {
+                         Wgamma=1, 
+                         User.defined.gammas=NULL) {
   
   if (!is.na(seed)) {
     set.seed(seed)
@@ -167,7 +168,7 @@ DCAM_LibSize <- function(y_obser,                         # Observations, organi
   }
   # Main loop
 
-  for(sim in 2:(NSIM*thinning + burn_in)){
+  for(sim in 2:(nsim*thinning + burn_in)){
     ################################################################
     # Stochastic Truncation - Distributional
     Uj   <- runif(J, 0, g_slice((zj),kappa))
@@ -269,7 +270,7 @@ DCAM_LibSize <- function(y_obser,                         # Observations, organi
                          rate = b_alpha - logeta)
       }
       ################################################################
-      
+      # missing beta part
     }
     
     ################################################################

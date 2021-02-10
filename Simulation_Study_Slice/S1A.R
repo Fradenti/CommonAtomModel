@@ -50,8 +50,23 @@ S1_A_3 <- mclapply(1:30,parallel.CAM,mc.cores = 5,
 L <- list(S1_A_1,S1_A_2,S1_A_3)
 saveRDS(L,"Simulation_Study_Slice/S1a.RDS")
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Result Extraction -------------------------------------------------------
 
+L <- readRDS("Simulation_Study_Slice/S1a.RDS")
 
 
 
@@ -62,42 +77,64 @@ maxGTD <- StatPerMeCo::Frobenius(
   matrix(0,nrow(DC_GT_PSM),ncol(DC_GT_PSM)),
   matrix(1,nrow(DC_GT_PSM),ncol(DC_GT_PSM)))
 
-time <- list()
-attr <- psm <- clu <- list()
-perc <- nclu <- aran <- frob <- numeric(30)
+time      <- timescale <- matrix(NA,30,3)
 #################################################################################
-MOD <- S1_A_3
-#################################################################################
-for(i in 1:30){
-  R <-  MOD[[i]]$model$Z_j
-  perc[i] <- mean(apply(R,1,function(x) length(unique(x))==6))
-  
-  psm[[i]]  <- PSM(R)
-  clu[[i]]  <- mcclust.ext::minVI(psm[[i]],method = "greedy")$cl
-  nclu[i] <- length(unique(clu[[i]]))
-  aran[i] <- mcclust::arandi(clu[[i]],gt_distr)
-  frob[i] <- StatPerMeCo::Frobenius(psm[[i]],DC_GT_PSM)/maxGTD
-  }
+for(K in 1:3){
+  mod <- L[[K]]
+  time[,K] <- as.numeric(unlist(map(mod,~.x$time)))
+  timescale[,K] <- unlist(map(mod,~attr(.x$time,which = "units")))
+}
 
-RES <- cbind(perc,nclu/6,aran,frob)
-saveRDS(RES,"Simulation_Study_Slice/results_DC_S1a3.RDS")
-plot(ts(RES))
-boxplot(RES)
-pheatmap::pheatmap(psm[[1]],cluster_rows = F,cluster_cols = F)
-plot(frob)
-plot(aran)
+Time <- ifelse(timescale=="secs", time/60, time)
+boxplot(Time)
+
+
+nclu <- aran <- frob <- matrix(NA,30,3)
+PSMs <- psm <- list()
+CLUs <- clu <- list()
+
+for(K in 1:3){
+  mod <- L[[K]]
+  
+
+  for(i in 1:30){
+    
+    R <-  mod[[i]]$model$Z_j
+    
+    psm[[i]]  <- PSM(R)
+    clu[[i]]  <- mcclust.ext::minVI(psm[[i]],method = "greedy")$cl
+    
+    nclu[i,K] <- length(unique(clu[[i]]))
+    aran[i,K] <- mcclust::arandi(clu[[i]],gt_distr)
+    frob[i,K] <- StatPerMeCo::Frobenius(psm[[i]],DC_GT_PSM)/maxGTD
+    cat(i)
+  }
+  rm(mod)
+  
+  
+  RES <- list(psm,clu,nclu,aran,frob)
+  saveRDS(RES,paste0("Simulation_Study_Slice/Results_30_1A_",K,".RDS"))
+}
+
 
 
 # Observational Clusters -------------------------------------------------
+ALL_S1a  <- readRDS("Simulated_Data/ALL_S1A_100.RDS")
+Yall_s1a <- ALL_S1a[[1]]
+Gall_s1a <- ALL_S1a[[2]]
+Oall_s1a <- ALL_S1a[[3]]
 
-time <- list()
-attr <- psm <- clu <- list()
-perc <- nclu <- aran <- frob <- numeric(30)
-plot(Yall_s1a[[1]][[1]],col=Oall_s1a[[1]][[1]])
+nclu <- aran <- frob <- matrix(NA,30,3)
+PSMs <- psm <- list()
+CLUs <- clu <- list()
+
 #################################################################################
-K   <- 3
-MOD <- S1_A_3
-#################################################################################
+
+
+for(K in 1:3){
+  mod <- L[[K]]
+  
+
 for(i in 1:30){
   gt_distr   <- Oall_s1a[[i]][[K]]
   DC_GT_PSM  <- mcclust::comp.psm(rbind(gt_distr,gt_distr))
@@ -106,21 +143,21 @@ for(i in 1:30){
     matrix(1,nrow(DC_GT_PSM),ncol(DC_GT_PSM)))
   
   
-  R <-  MOD[[i]]$model$Csi_ij
-  perc[i] <- mean(apply(R,1,function(x) length(unique(x))==6))
+  R <-  mod[[i]]$model$Csi_ij
   
   psm[[i]]  <- PSM(R)
   clu[[i]]  <- mcclust.ext::minVI(psm[[i]])$cl
-  nclu[i] <- length(unique(clu[[i]]))
-  aran[i] <- mcclust::arandi(clu[[i]],gt_distr)
-  frob[i] <- StatPerMeCo::Frobenius(psm[[i]],DC_GT_PSM)/maxGTD
-cat(i)
+  
+  nclu[i,K] <- length(unique(clu[[i]]))
+  aran[i,K] <- mcclust::arandi(clu[[i]],gt_distr)
+  frob[i,K] <- StatPerMeCo::Frobenius(psm[[i]],DC_GT_PSM)/maxGTD
+  cat(i)
   }
 
-
-ORES <- cbind(perc,nclu/6,aran,frob)
-saveRDS(ORES,"Simulation_Study_Slice/results_OC_S1a3.RDS")
-
+  
+  RES <- list(psm,clu,nclu,aran,frob)
+  saveRDS(RES,paste0("Simulation_Study_Slice/Results_30_1A_Observational_",K,".RDS"))
+}
 
 plot(ts(RES))
 boxplot(RES)

@@ -99,7 +99,8 @@ CAM <- function(y_obser,                         # Observations, organized into
                 batch = 100,
                 post.dens = T,
                 alpha.fixed = 1,
-                beta.fixed = 1) {                       
+                beta.fixed = 1,
+                conditional.beta = T){                       
   
   if (!is.na(seed)) {
     set.seed(seed)
@@ -284,6 +285,7 @@ CAM <- function(y_obser,                         # Observations, organized into
                        rate = b_alpha - logeta)
     }
     ################################################################
+    if(conditional.beta){
     UZJ         <- unique(zj)
     Sbar        <- length(UZJ)
     usedV       <- v.c[,UZJ]
@@ -296,26 +298,28 @@ CAM <- function(y_obser,                         # Observations, organized into
     
     beta <- rgamma(1,astar,bstar)
     
-    ################################################################
-    # Kz    <-  length(unique(zj.pg))
-    # n_j   <-  table(zj.pg)
-    # T_j   <-  tapply(cij, zj.pg, function(x) length(unique(x)))
-    # 
-    # BetaAcc  <- MH.beta(beta = beta, Lk = T_j, mlk = n_j, K.star = Kz,
-    #                  ab = a_beta, bb=b_beta,sigma.prop = sigma.prop.beta)
-    # 
-    # beta <- BetaAcc[1]
-    # 
-    # ACC[sim - ind * batch] = BetaAcc[2]
-    # if (((sim) %% batch) == 0) {
-    #   sigma.prop.beta       = exp(ifelse(mean(ACC) < .44, #optThresh,
-    #                           (log(sigma.prop.beta)       - min(
-    #                             0.01, 1 / sqrt(sim)
-    #                           )) , (log(sigma.prop.beta)       + min(
-    #                             0.01, 1 / sqrt(sim)
-    #                           ))))
-    #   ind <- ind + 1
-    # }
+    }else{
+    
+    Kz    <-  length(unique(zj.pg))
+    n_j   <-  table(zj.pg)
+    T_j   <-  tapply(cij, zj.pg, function(x) length(unique(x)))
+
+    BetaAcc  <- MH.beta(beta = beta, Lk = T_j, mlk = n_j, K.star = Kz,
+                     ab = a_beta, bb=b_beta,sigma.prop = sigma.prop.beta)
+
+    beta <- BetaAcc[1]
+
+    ACC[sim - ind * batch] = BetaAcc[2]
+    if (((sim) %% batch) == 0) {
+      sigma.prop.beta       = exp(ifelse(mean(ACC) < .44, #optThresh,
+                              (log(sigma.prop.beta)       - min(
+                                0.01, 1 / sqrt(sim)
+                              )) , (log(sigma.prop.beta)       + min(
+                                0.01, 1 / sqrt(sim)
+                              ))))
+      ind <- ind + 1
+    }
+    }
     }
     ################################################################
     if (sim > burn_in & ((sim - burn_in) %% thinning == 0)) {
