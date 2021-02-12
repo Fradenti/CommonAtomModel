@@ -75,7 +75,7 @@ for(K in 1:3){
 
 Time <- ifelse(timescale=="secs", time/60, time)
 boxplot(Time)
-
+saveRDS(Time,"Simulation_Study_Slice/Time1B.RDS")
 
 nclu <- aran <- frob <- matrix(NA,30,3)
 PSMs <- psm <- list()
@@ -100,10 +100,10 @@ for(K in 1:3){
   rm(mod)
   
   
-  RES <- list(psm,clu,nclu,aran,frob)
-  saveRDS(RES,paste0("Simulation_Study_Slice/Results_30_1B_",K,".RDS"))
-}
 
+}
+RES <- list(nclu,aran,frob)
+saveRDS(RES,paste0("Simulation_Study_Slice/Results_30_1B.RDS"))
 
 
 # Observational Clusters -------------------------------------------------
@@ -145,15 +145,8 @@ for(K in 1:3){
     cat(i)
   }
   
-  
-  RES <- list(psm,clu,nclu,aran,frob)
-  saveRDS(RES,paste0("Simulation_Study_Slice/Results_30_1B_Observational_",K,".RDS"))
 }
 
-plot(ts(RES))
-boxplot(RES)
-pheatmap::pheatmap(psm[[1]])
-plot(frob)
-plot(aran)
-
+  RES <- list(nclu,aran,frob)
+  saveRDS(RES,paste0("Simulation_Study_Slice/Results_30_1B_Observational.RDS"))
 
