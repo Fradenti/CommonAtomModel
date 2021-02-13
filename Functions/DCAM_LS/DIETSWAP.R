@@ -1,5 +1,5 @@
 # Source Functions --------------------------------------------------------
-Rcpp::sourceCpp("Functions/DCAM_LS/newDCAM_LS_MAIN.cpp")
+Rcpp::sourceCpp("Functions/DCAM_LS/newDCAM_LS.cpp")
 source("Functions/DCAM_LS/newDCAM_LS.R")
 
 # Load libraries ----------------------------------------------------------
@@ -127,8 +127,8 @@ prior1 <- list(
   a_alpha=3, b_alpha = 3,
   a_beta =3, b_beta  = 3)
 
-nsim     = 50000
-burn_in  = 50000
+N_     = 50000
+N_  = 50000
 thinning =1
 set.seed (19922508)
 
@@ -136,13 +136,14 @@ R <-DCAM_LibSize(y_obser = y_o1,
                  y_group = y_g1,
                  K0 = length(id1),
                  L0 = N_r,
-                 fixedAB = T,
+                 fixedAB = F,
                  prior    = prior1,
-                 nsim     = 1000,
-                 burn_in  = 1000,
+                 nsim     = N_,
+                 burn_in  = N_,
                  thinning = thinning,
                  verbose = T,
                  post.dens = F,
+                 conditional.beta = T,
                  User.defined.gammas = udg1)
 #saveRDS(R,"DCAM_results_Dietswap_time1_50k_betaok.RDS")
 
@@ -159,11 +160,13 @@ reset <- function(x){
   return(z)
 }
 
+plot(ts(cbind(R$A_DP,R$B_DP)))
+
 # 1 Distributional clusters analysis -------------------------------------------------
 psm <- PSM(R$Z_j)
 image(psm)
 # Collect distributional clusters - best partition accordinf to VI
-cl1 <- cl1V  <- mcclust.ext::minVI(psm, method = "greedy")
+cl1 <- cl1V  <- mcclust.ext::minVI(psm)
 table(apply(ZM,1,max))
 table(cl1$cl)
 image(psm)

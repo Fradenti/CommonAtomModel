@@ -99,7 +99,30 @@ arma::colvec Update_Distributional_Sticks(arma::colvec zj,
   return v_z; 
 }
 
-///////////////////////////////////////////////////////////// Update omega
+/////////////////////////////////////////////////////////// Update Omega
+// [[Rcpp::export]]
+arma::mat Update_Observational_Sticks(arma::colvec cij, 
+                                      arma::colvec zj_pg,
+                                      int NN_c, 
+                                      int NN_z, 
+                                      double beta){
+  arma::colvec zj_pg_cpp = zj_pg -1 ,  cij_cpp = cij -1;
+  
+  arma::mat v_omega(NN_c, NN_z);
+  
+  v_omega.fill(0); v_omega.fill(0);
+  
+  for(int jj=0; jj<NN_z; jj++){
+    for(int ii=0; ii<NN_c;  ii++){
+      v_omega(ii,jj) = 
+        R::rbeta( 1 + accu(zj_pg_cpp == jj && cij_cpp == ii),
+                  beta + accu(zj_pg_cpp == jj && cij_cpp >  ii));
+    }
+    // v_omega(NN_c-1,jj) = 1.; // new line
+    // omega.col(jj)      = SB_given_u2(v_omega.col(jj));
+  }
+  return(v_omega); 
+}
 // [[Rcpp::export]]
 arma::mat Update_omega(arma::colvec cij, 
                        arma::colvec zj_pg,

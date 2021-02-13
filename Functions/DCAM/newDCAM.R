@@ -12,7 +12,6 @@ library(MCMCpack);
 library(scales)
 
 
-
 posterior.densities.DCAM <- function(m1,howfarback, normalize=T, xx){
   L    <- list()
   J    <- length(m1$Z_j[1,])
@@ -43,35 +42,67 @@ g_slice <- function(j, kappa) {
 }
 
 
-log_post_beta <- function(beta, Lk, n_j, K.star, ab,bb){
-  K.star*lgamma(beta) -  sum(lgamma(beta + n_j)) + 
-    ( sum(Lk+ ab-1) ) * log(beta) - bb*beta
+# Marginal Beta -----------------------------------------------------------
+
+
+log_post_beta <- function(beta, MbarS, n_j, Sbar, ab, bb) {
+  Sbar * lgamma(beta) -  sum(lgamma(beta + n_j)) +
+    (sum(MbarS) + ab - 1) * log(beta) - bb * beta
 }
 
 
-log_post_LOGbeta <- function(LOGbeta, Lk, n_j, K.star, ab,bb){
-  log_post_beta(exp(LOGbeta), Lk = Lk, n_j = n_j, K.star = K.star, ab = ab,bb = bb) +
+log_post_LOGbeta <- function(LOGbeta, MbarS, n_j, Sbar, ab, bb) {
+  log_post_beta(
+    exp(LOGbeta),
+    MbarS = MbarS,
+    n_j = n_j,
+    Sbar = Sbar,
+    ab = ab,
+    bb = bb
+  ) +
     LOGbeta
 }
 
-MH.beta <- function(beta, Lk, mlk, K.star,ab,bb,sigma.prop){
-  
+MH.beta <- function(beta, MbarS, n_j, Sbar, ab, bb, sigma.prop) {
   old.log.beta <- log(beta)
-  new.log.beta <- rnorm(1,old.log.beta,sigma.prop)
+  new.log.beta <- rnorm(1, old.log.beta, sigma.prop)
   acc          <- 0
   
-  alpha <- log_post_LOGbeta(LOGbeta = new.log.beta, Lk = Lk, n_j = mlk, K.star = K.star, ab = ab,bb = bb)-
-    log_post_LOGbeta(LOGbeta = old.log.beta, Lk = Lk, n_j = mlk, K.star = K.star, ab = ab,bb = bb)
+  alpha <-
+    log_post_LOGbeta(
+      LOGbeta = new.log.beta,
+      MbarS = MbarS,
+      n_j = n_j,
+      Sbar = Sbar,
+      ab = ab,
+      bb = bb
+    ) -
+    log_post_LOGbeta(
+      LOGbeta = old.log.beta,
+      MbarS = MbarS,
+      n_j = n_j,
+      Sbar = Sbar,
+      ab = ab,
+      bb = bb
+    )
   
-  if(runif(1)<exp(alpha)){
+  if (runif(1) < exp(alpha)) {
     beta <- exp(new.log.beta)
     acc  <- 1
-  }else{
+  } else{
     beta <- exp(old.log.beta)
   }
   
-  return(c(beta,acc))
+  return(c(beta, acc))
 }
+
+
+
+
+
+
+
+
 
 
 # Auxiliary functions -----------------------------------------------------
@@ -99,7 +130,8 @@ DCAM <- function(y_obser,                         # Observations, organized into
                 batch = 100,
                 post.dens = T,
                 alpha.fixed = 1,
-                beta.fixed = 1) {                       
+                beta.fixed = 1,
+                conditional.beta = T) {        # marginal sampler needs to be validated               
   
   if (!is.na(seed)) {
     set.seed(seed)
@@ -214,13 +246,24 @@ DCAM <- function(y_obser,                         # Observations, organized into
     }
     ################################################################   
     # Update observational Weights
-    omega <- Update_omega(
+    v.c <- Update_Observational_Sticks(
       cij = cij,
       zj_pg = zj.pg,
       NN_c = NN.c,
       NN_z = NN.z,
       beta = beta
     )
+    if(any(v.c==1)){
+      v.c[v.c==1] <- 1-1e-4 + runif(1,1e-5,1e-3) # avoid numerical issues
+    }
+    omega <- apply(v.c,2,SB_given_u2)
+    # omega <- Update_omega(
+    #   cij = cij,
+    #   zj_pg = zj.pg,
+    #   NN_c = NN.c,
+    #   NN_z = NN.z,
+    #   beta = beta
+    # )
     ################################################################
     # Update Atoms
     theta <- Update_theta(y_LAT = y_lat,
@@ -286,7 +329,42 @@ DCAM <- function(y_obser,                         # Observations, organized into
                          rate = b_alpha - logeta)
       }
       ################################################################
-
+      ################################################################
+      if(conditional.beta){
+        UniqZJ      <- unique(zj)
+        sUniqZj     <- sort(UniqZJ,index=T)
+        Sbar        <- length(UniqZJ)
+        usedV       <- v.c[,sUniqZj$x]
+        MbarS       <- tapply(cij, zj.pg, max) # tapply sorts the output according to zj.pg. To not lose the correspondence with usedV, I sort the column of usedV
+        one_m_usedV <- log(1-usedV)
+        
+        astar <- a_beta + sum(MbarS)
+        bstar <- b_beta - sum(sapply(1:Sbar, function(x)  sum(one_m_usedV[1:MbarS[x],x])))
+        
+        beta <- rgamma(1,astar,bstar) 
+      
+      }else{
+        
+        Sbar    <-  length(unique(zj.pg))
+        n_j   <-  table(zj.pg)
+        MbarS   <-  tapply(cij, zj.pg, function(x) length(unique(x)))
+        
+        BetaAcc  <- MH.beta(beta = beta, MbarS = MbarS, n_j = n_j, Sbar = Sbar,
+                            ab = a_beta, bb=b_beta,sigma.prop = sigma.prop.beta)
+        
+        beta <- BetaAcc[1]
+        
+        ACC[sim - ind * batch] = BetaAcc[2]
+        if (((sim) %% batch) == 0) {
+          sigma.prop.beta       = exp(ifelse(mean(ACC) < .44, #optThresh,
+                                             (log(sigma.prop.beta)       - min(
+                                               0.01, 1 / sqrt(sim)
+                                             )) , (log(sigma.prop.beta)       + min(
+                                               0.01, 1 / sqrt(sim)
+                                             ))))
+          ind <- ind + 1
+        }
+      }
     }
     ################################################################
     if (sim > burn_in & ((sim - burn_in) %% thinning == 0)) {
