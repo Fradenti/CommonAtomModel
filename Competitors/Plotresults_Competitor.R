@@ -24,29 +24,38 @@ ari <- plotter_jags(x1 = tj1a_c[[2]],
                     x2 = tj1a_n[[2]],
                     x3 = tj1a_h[[2]],
                     log=F,
-                    Title = "ARI - DC - Jags - S 1a",yl = "Adjusted Rand Index")
+                    Title = "ARI - DC - Jags - S 1A",yl = "Adjusted Rand Index")
 
-nfd <- plotter_jags(tj1a_c[[3]],tj1a_n[[3]],tj1a_h[[3]],log=F,Title = "NFD - DC - Jags",yl = "Normalized Frobenious Distance")
+nfd <- plotter_jags(tj1a_c[[3]],tj1a_n[[3]],tj1a_h[[3]],log=F,
+                    Title = "NFD - DC - Jags - S 1A",yl = "Normalized Frobenious Distance")
 
-ari/nfd
+ari+nfd
 
-ggsave("Competitors/ARINFD_DC_jags_S1a.png",width = 12,height = 10)
-ggsave("Competitors/ARINFD_DC_jags_S1a.pdf",width = 12,height = 10)
-
-
+ggsave("Competitors/Jags_ARINFD_DC_jags_S1a.png",width = 12,height = 6)
+ggsave("Competitors/Jags_ARINFD_DC_jags_S1a.pdf",width = 12,height = 6)
 
 
-ari <- plotter_jags(x1 = tj2_c[[2]],
+
+
+ari2 <- plotter_jags(x1 = tj2_c[[2]],
                     x2 = tj2_n[[2]],
                     x3 = tj2_h[[2]],
                     log=F,
                     Title = "ARI - DC - Jags - S 2",yl = "Adjusted Rand Index")
 
-nfd <- plotter_jags(tj2_c[[3]],
+nfd2 <- plotter_jags(tj2_c[[3]],
                     tj2_n[[3]],
-                    tj2_h[[3]],log=F,Title = "NFD - DC - Jags",yl = "Normalized Frobenious Distance")
+                    tj2_h[[3]],log=F,Title = "NFD - DC - Jags - S 2",yl = "Normalized Frobenious Distance")
 
-ari/nfd
+ari2+nfd2
 
-ggsave("Competitors/ARINFD_DC_jags_S2.png",width = 12,height = 10)
-ggsave("Competitors/ARINFD_DC_jags_S2.pdf",width = 12,height = 10)
+ggsave("Competitors/Jags_ARINFD_DC_jags_S2.png",width = 12,height = 6)
+ggsave("Competitors/Jags_ARINFD_DC_jags_S2.pdf",width = 12,height = 6)
+
+
+
+
+(ari+ari2)/(nfd+nfd2)
+
+ggsave("Competitors/All_ARINFD_DC_jags_S2.png",width = 12,height = 8)
+ggsave("Competitors/All_ARINFD_DC_jags_S2.pdf",width = 12,height = 8)

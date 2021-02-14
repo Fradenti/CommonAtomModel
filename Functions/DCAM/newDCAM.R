@@ -254,7 +254,7 @@ DCAM <- function(y_obser,                         # Observations, organized into
       beta = beta
     )
     if(any(v.c==1)){
-      v.c[v.c==1] <- 1-1e-4 + runif(1,1e-5,1e-3) # avoid numerical issues
+      v.c[v.c==1] <- 1-1e-4 # avoid numerical issues
     }
     omega <- apply(v.c,2,SB_given_u2)
     # omega <- Update_omega(

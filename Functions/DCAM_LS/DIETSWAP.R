@@ -127,26 +127,46 @@ prior1 <- list(
   a_alpha=3, b_alpha = 3,
   a_beta =3, b_beta  = 3)
 
-N_     = 50000
-N_  = 50000
+N_     = 25000
+N_  = 25000
 thinning =1
 set.seed (19922508)
 
 R <-DCAM_LibSize(y_obser = y_o1,
                  y_group = y_g1,
-                 K0 = length(id1),
-                 L0 = N_r,
+                 K0 = 10,
+                 L0 = 20,
+                 fixedAB = T,
+                 prior    = prior1,
+                 nsim     = N_,
+                 burn_in  = N_,
+                 thinning = thinning,
+                 verbose = T,cheap = T,
+                 post.dens = F,
+                 conditional.beta = F,
+                 User.defined.gammas = udg1)
+
+#saveRDS(R,"DCAM_results_Dietswap_time1_25k_Feb2021_YEAH!!_abfissi.RDS")
+
+N_     = 25000
+N_  = 25000
+thinning =1
+set.seed (19922508)
+
+R <-DCAM_LibSize(y_obser = y_o1,
+                 y_group = y_g1,
+                 K0 = 10,
+                 L0 = 20,
                  fixedAB = F,
                  prior    = prior1,
                  nsim     = N_,
                  burn_in  = N_,
                  thinning = thinning,
-                 verbose = T,
+                 verbose = T,cheap = T,
                  post.dens = F,
                  conditional.beta = T,
                  User.defined.gammas = udg1)
-#saveRDS(R,"DCAM_results_Dietswap_time1_50k_betaok.RDS")
-
+#saveRDS(R,"DCAM_results_Dietswap_time1_25k_Feb2021_YEAH!!_abvariabili.RDS")
 # Output Analysis ---------------------------------------------------------
 #
 R <- readRDS("DCAM_results_Dietswap_time1_50k_betaok.RDS")
@@ -165,9 +185,9 @@ plot(ts(cbind(R$A_DP,R$B_DP)))
 # 1 Distributional clusters analysis -------------------------------------------------
 psm <- PSM(R$Z_j)
 image(psm)
-# Collect distributional clusters - best partition accordinf to VI
+pheatmap::pheatmap(psm)
+# Collect pheatmap()ributional clusters - best partition according to VI
 cl1 <- cl1V  <- mcclust.ext::minVI(psm)
-table(apply(ZM,1,max))
 table(cl1$cl)
 image(psm)
 Heatmap(psm,col = viridis::viridis(100),
@@ -193,6 +213,8 @@ table(cl1$cl)
 mean(OT_r2[,cl1$cl==1]==0)
 mean(OT_r2[,cl1$cl==2]==0)
 mean(OT_r2[,cl1$cl==3]==0)
+mean(OT_r2[,cl1$cl==4]==0)
+mean(OT_r2[,cl1$cl==5]==0)
 table(cl1$cl,SAM_t1$bmi_group)
 t(table(cl1$cl,SAM_t1$sex))
 t(table(cl1$cl,SAM_t1$nationality))
@@ -232,7 +254,7 @@ ggplot(LL2)+
   geom_hline(yintercept = c(0,1),lty=3)+
   geom_line(aes(x=Var1,y=value,group=Var2,col=as.factor(cluster_per_obs)),lwd=.5,alpha=.2)+
   geom_point(aes(x=Var1,y=value,group=Var2,col=as.factor(cluster_per_obs)),lwd=1,alpha=.9)+
-  theme_bw()+scale_color_manual("Distributional\nCluster",values = c(2,4,1))+ylim(0,1)+
+  theme_bw()+scale_color_manual("Distributional\nCluster",values = c(2,4,1,6,5))+ylim(0,1)+
   ggtitle("CRF of microbiome subpopulations")+xlab("Taxa sorted by count")+ylab("Cumulative Relative Frequncy")
 #ggsave("Ecdf_Micro_50k_betaok.png" ,height = 5,width = 8)          
 #ggsave("Ecdf_Micro_50k_betaok.tiff",height = 5,width = 8)          
@@ -243,7 +265,7 @@ ggplot(LL2)+
   geom_hline(yintercept = c(0,1),lty=3)+
   geom_line(aes(x=Var1,y=value,group=Var2,col=as.factor(cluster_per_obs)),lwd=.5,alpha=.05)+
   geom_point(aes(x=Var1,y=value,group=Var2,col=as.factor(cluster_per_obs)),lwd=1,alpha=.05)+
-  theme_bw()+scale_color_manual("Distributional\nCluster",values = c(2,4,1))+ylim(0,1)+
+  theme_bw()+scale_color_manual("Distributional\nCluster",values = c(2,4,1,6,5))+ylim(0,1)+
   ggtitle("CRF of microbiome subpopulations\nSubjects 9, 21, and 30")+xlab("Taxa sorted by count")+ylab("Cumulative Relative Frequncy")+
   geom_point(data = LL2 %>% filter(Var2==9 | Var2 ==21 |Var2 ==30),
              aes(x=Var1,y=value,group=Var2,col=as.factor(cluster_per_obs)),lwd=1,alpha=1)
