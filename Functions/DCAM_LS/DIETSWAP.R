@@ -127,6 +127,9 @@ prior1 <- list(
   a_alpha=3, b_alpha = 3,
   a_beta =3, b_beta  = 3)
 
+
+# fixed alpha and beta
+
 N_     = 25000
 N_  = 25000
 thinning =1
@@ -146,7 +149,9 @@ R <-DCAM_LibSize(y_obser = y_o1,
                  conditional.beta = F,
                  User.defined.gammas = udg1)
 
-#saveRDS(R,"DCAM_results_Dietswap_time1_25k_Feb2021_YEAH!!_abfissi.RDS")
+#saveRDS(R,"DCAM_results_Dietswap_time1_25k_Feb2021_abfissi.RDS")
+
+# stochastic alpha and beta
 
 N_     = 25000
 N_  = 25000
@@ -166,10 +171,10 @@ R <-DCAM_LibSize(y_obser = y_o1,
                  post.dens = F,
                  conditional.beta = T,
                  User.defined.gammas = udg1)
-#saveRDS(R,"DCAM_results_Dietswap_time1_25k_Feb2021_YEAH!!_abvariabili.RDS")
+#saveRDS(R,"DCAM_results_Dietswap_time1_25k_Feb2021_abvariabili.RDS")
 # Output Analysis ---------------------------------------------------------
 #
-R <- readRDS("DCAM_results_Dietswap_time1_50k_betaok.RDS")
+R <- readRDS("Functions/DCAM_LS/DCAM_results_Dietswap_time1_25k_Feb2021_ab_stochastic.RDS")
 # Auxiliary function 
 reset <- function(x){
   z <- y <- x
@@ -181,13 +186,15 @@ reset <- function(x){
 }
 
 plot(ts(cbind(R$A_DP,R$B_DP)))
+plot(ts(R$NN.cz))
+
 
 # 1 Distributional clusters analysis -------------------------------------------------
 psm <- PSM(R$Z_j)
 image(psm)
 pheatmap::pheatmap(psm)
 # Collect pheatmap()ributional clusters - best partition according to VI
-cl1 <- cl1V  <- mcclust.ext::minVI(psm)
+cl1 <- cl1V  <- mcclust.ext::minVI(psm,method = "greedy")
 table(cl1$cl)
 image(psm)
 Heatmap(psm,col = viridis::viridis(100),
@@ -205,16 +212,40 @@ Heatmap(psm,col = gray.colors(100),cluster_rows = F,cluster_columns = F,
         column_split = paste0("DC-",as.character(cl1$cl)),
         row_split = as.character(cl1$cl))
 
-#saveRDS(cl1,"Distr_Clust_50k_betaok.RDS")
-cl1 <- readRDS("Distr_Clust_50k_betaok.RDS")
+library(hrbrthemes)
+pheatmap::pheatmap(psm,cluster_cols = F,cluster_rows = F)
+psmo <- rbind(psm[cl1$cl==1,],psm[cl1$cl==2,],psm[cl1$cl==3,])
+pheatmap::pheatmap(psmo,cluster_cols = F,cluster_rows = F)
+psmo <- cbind(psmo[,cl1$cl==1],psmo[,cl1$cl==2],psmo[,cl1$cl==3])
+pheatmap::pheatmap(psmo,cluster_cols = F,cluster_rows = F)
+
+inds <- c(which(cl1$cl==1),which(cl1$cl==2),which(cl1$cl==3))
+
+mpsm <- melt(psmo)
+ggplot(data=mpsm)+ geom_tile(aes(x=factor(X1),y=factor(X2),fill=value), colour = "black")+theme_minimal()+
+  scale_fill_viridis_c("Posterior\nCoclustering\nProbability")+
+  theme(legend.position = "bottom")+
+  scale_x_discrete("Subject",labels=inds)+
+  scale_y_discrete("Subject",labels=inds)+
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.title = element_text(size = 12),
+        legend.text = element_text( size = 10),
+        legend.key.height = unit(.5, 'cm'),
+        legend.key.width = unit(3, 'cm'))
+ #+scale_fill_gradient(low = "white",high = "steelblue")
+ggsave("Functions/DCAM_LS/Heatmap_DC.pdf",width = 10,height = 11)
+ggsave("Functions/DCAM_LS/Heatmap_DC.png",width = 10,height = 11)
+
+
+#saveRDS(cl1,"Functions/DCAM_LS/DCAM_results_Dietswap_time1_25k_ab_stoc_DC.RDS")
+#cl1 <- readRDS("Distr_Clust_50k_betaok.RDS")
 
 # Descriptive results
 table(cl1$cl)
 mean(OT_r2[,cl1$cl==1]==0)
 mean(OT_r2[,cl1$cl==2]==0)
 mean(OT_r2[,cl1$cl==3]==0)
-mean(OT_r2[,cl1$cl==4]==0)
-mean(OT_r2[,cl1$cl==5]==0)
 table(cl1$cl,SAM_t1$bmi_group)
 t(table(cl1$cl,SAM_t1$sex))
 t(table(cl1$cl,SAM_t1$nationality))
@@ -223,7 +254,7 @@ SAM_t1["cl"] <- cl1$cl
 At <- as_tibble(SAM_t1)
 At <- At %>% mutate("Mean"          = apply(OT_r2,2,mean),
                     "Median"        = apply(OT_r2,2,median),
-                    "Std.Dev"       = apply(OT_r2,2,sd),
+                    "Standard Deviation"       = apply(OT_r2,2,sd),
                     "% of zeros"    = apply(OT_r2,2,function(x) mean(x==0)),
                     "Range"         = apply(OT_r2,2,function(x) diff(range(x))),
                     "Shannon Index" = apply(OT_r2,2,vegan::diversity),
@@ -231,16 +262,16 @@ At <- At %>% mutate("Mean"          = apply(OT_r2,2,mean),
                     "Skewness"      = apply(OT_r2,2,moments::skewness),
                     "Kurtosis"      = apply(OT_r2,2,moments::kurtosis))
 X <- At %>% dplyr::select(Mean,Median,Range,
-                   Std.Dev,Skewness,Kurtosis,
+                   `Standard Deviation`,Skewness,Kurtosis,
                    `% of zeros`,`Simpson Index`,`Shannon Index`,cl)
 Xr <- reshape2::melt(X,"cl")
 Xr <- Xr %>% mutate( cl2 = paste0("DC-",cl)  )
 ggplot(Xr)+geom_boxplot(aes(x=cl2,y=value,group=cl2))+facet_wrap(~variable,scales="free")+
   theme_bw()+xlab("Distributional Clusters")+ylab("")+
   theme(strip.text.x = element_text(size = 10))
-# ggsave("Distrib_boxplots_50k_betaok.png" ,width = 12,height = 15)
-# ggsave("Distrib_boxplots_50k_betaok.tiff",width = 12,height = 15)
-# ggsave("Distrib_boxplots_50k_betaok.pdf", width = 12,height = 15)
+ggsave("Functions/DCAM_LS/DCAM_results_Dietswap_time1_25k_ab_stoc_Distrib_boxplots.png" ,width = 12,height = 15)
+ggsave("Functions/DCAM_LS/DCAM_results_Dietswap_time1_25k_ab_stoc_Distrib_boxplots.tiff",width = 12,height = 15)
+ggsave("Functions/DCAM_LS/DCAM_results_Dietswap_time1_25k_ab_stoc_Distrib_boxplots.pdf", width = 12,height = 15)
 
 
 # Distributional clusters by OTU
@@ -256,9 +287,9 @@ ggplot(LL2)+
   geom_point(aes(x=Var1,y=value,group=Var2,col=as.factor(cluster_per_obs)),lwd=1,alpha=.9)+
   theme_bw()+scale_color_manual("Distributional\nCluster",values = c(2,4,1,6,5))+ylim(0,1)+
   ggtitle("CRF of microbiome subpopulations")+xlab("Taxa sorted by count")+ylab("Cumulative Relative Frequncy")
-#ggsave("Ecdf_Micro_50k_betaok.png" ,height = 5,width = 8)          
-#ggsave("Ecdf_Micro_50k_betaok.tiff",height = 5,width = 8)          
-#ggsave("Ecdf_Micro_50k_betaok.pdf" ,height = 5,width = 8)          
+ggsave("Functions/DCAM_LS/DCAM_results_Dietswap_time1_25k_ab_stoc_Ecdf_Micro_50k_betaok.png" ,height = 5,width = 8)          
+ggsave("Functions/DCAM_LS/DCAM_results_Dietswap_time1_25k_ab_stoc_Ecdf_Micro_50k_betaok.tiff",height = 5,width = 8)          
+ggsave("Functions/DCAM_LS/DCAM_results_Dietswap_time1_25k_ab_stoc_Ecdf_Micro_50k_betaok.pdf" ,height = 5,width = 8)          
 
 
 ggplot(LL2)+
@@ -277,16 +308,21 @@ ggplot(LL2)+
 G1 <- apply(OT_r2[,cl1$cl==1],2,which.max)
 G2 <- apply(OT_r2[,cl1$cl==2],2,which.max)
 plot(table(G1))
+text(table(G1)~as.numeric(names(table(G1))),labels=Names[as.numeric(names(table(G1)))])
 plot(table(G2))
+text(table(G2)~as.numeric(names(table(G2))),labels=Names[as.numeric(names(table(G2)))])
+
 plot(OT_r2[,cl1$cl==3],type="h")
+text(OT_r2[,cl1$cl==3],labels=Names)
 Names[c(19,78)]
 Names[c(86)]
+Names[c(58)]
 
 plot(rowMeans(apply(OT_r2[,cl1$cl==1],2,function(x) x/sum(x))),type="h")
-rowMeans(apply(OT_r2[,cl1$cl==1],2,function(x) x/sum(x)))[c(19,78)]
+rowMeans(apply(OT_r2[,cl1$cl==1],2,function(x) x/sum(x)))[c(19,78,86)]
+
 plot(rowMeans(apply(OT_r2[,cl1$cl==2],2,function(x) x/sum(x))),type="h")
 plot(OT_r2[,cl1$cl==3]/sum(OT_r2[,cl1$cl==3]),type="h")
-Names[c(58)]
 (OT_r2[,cl1$cl==3]/sum(OT_r2[,cl1$cl==3]))[86]
 
 
@@ -297,14 +333,14 @@ Names[c(58)]
 
 
 # 2 Observational Clusters Analysis --------------------------------------------------
-NSIM = 50000
+NSIM = 25000
 CSI <- R$Csi_ij
 
-ALL_micr_label <- array(NA,c(ncol(OT_r2),nrow(OT_r2),NSIM))
-for(i in 1:NSIM){
-  ALL_micr_label[,,i] <- matrix(CSI[[i]],nrow(OT_r2),ncol(OT_r2),byrow = T) 
-}
-ALL_micr_label[,,1]
+# ALL_micr_label <- array(NA,c(ncol(OT_r2),nrow(OT_r2),NSIM))
+# for(i in 1:NSIM){
+#   ALL_micr_label[,,i] <- matrix(CSI[[i]],nrow(OT_r2),ncol(OT_r2),byrow = T) 
+# }
+# ALL_micr_label[,,1]
 
 # index1 = which(cl1V$cl==1)
 # L1 <- length(index1)
@@ -315,18 +351,19 @@ ALL_micr_label[,,1]
 # index2 = which(cl1V$cl==2)
 # L2 <- length(index2)
 # ALL_micr_label2 <- array(NA,c(L2,N_r,NSIM))
-J <- 38
-N_r <- 119
+# J <- 38
+# N_r <- 119
 
 # Compute the best partition for observational clusters
-ZMic <- matrix(unlist(R$Csi_ij),NSIM,N_r*J,byrow = T)
-ZMic <- t(apply(ZMic,1,reset))
-psm <- mcclust::comp.psm(ZMic)
-clmic  <- mcclust.ext::minVI(psm)
-saveRDS(psm,"coclusteringmatrix_microb_observlevel.RDS")
-saveRDS(clmic,"clustering_microb_observlevel.RDS")
+# ZMic <- matrix(unlist(R$Csi_ij),NSIM,N_r*J,byrow = T)
+# ZMic <- t(apply(ZMic,1,reset))
 
-psm <- readRDS("coclusteringmatrix_microb_observlevel.RDS")
+psm <- PSM(CSI)
+saveRDS(psm,"Functions/DCAM_LS/coclusteringmatrix_microb_observlevel.RDS")
+clmic  <- mcclust.ext::minVI(psm)
+saveRDS(clmic,"Functions/DCAM_LS/clustering_microb_observlevel.RDS")
+
+psm   <- readRDS("coclusteringmatrix_microb_observlevel.RDS")
 clmic <- readRDS("clustering_microb_observlevel.RDS")
 
 
@@ -349,12 +386,12 @@ OBSCmat <- matrix(ordered,119,38)
 
 Heatmap(log(OT_r2+1),col = viridis::viridis(100),cluster_rows = F,cluster_columns = F,
         name = "Posterior\nCoclustering\nProbability",
-        row_title = "Subjects",column_labels = 1:38,
+        row_title = "OTUs",column_labels = 1:38,column_title = "Subjects",
         show_heatmap_legend = T,column_split = paste0("DC-",as.character(cl1$cl)))
 Heatmap(OBSCmat,col = viridis::viridis(8),cluster_rows = F,cluster_columns = F,
         name = "Posterior\nCoclustering\nProbability",
-        row_title = "Subjects",column_labels = 1:38,
-        show_heatmap_legend = T,
+        row_title = "OTUs",column_labels = 1:38,
+        show_heatmap_legend = T,column_title = "Subjects",
         column_split = paste0("DC-",as.character(cl1$cl)))
 
 # Creation of Abundance Classes
@@ -362,14 +399,14 @@ A   <- as_tibble(cbind(c(y_o1),ordered))
 to  <- table(ordered)
 lab <- c(rep("Low",sum(to[1:3])),
          rep("Medium",sum(to[4:6])),
-         rep("High",sum(to[7:8])  ))
-P <- rep(1:8,table(ordered))
+         rep("High",sum(to[7:9])  ))
+P <- rep(1:9,table(ordered))
 Aa <- tibble(V1=c(y_o1),OR=factor(ordered))
 
 
 Aa <- Aa %>% mutate(LAB = 
                       factor(ifelse(OR==1|OR==2|OR==3,"Low",
-                                    ifelse(OR==4|OR==5,"Medium","High"))
+                                    ifelse(OR==4|OR==5|OR==6,"Medium","High"))
                              ,levels=c("Low","Medium","High")))
 
 ggplot(Aa)+
@@ -379,18 +416,18 @@ ggplot(Aa)+
   theme_bw()+scale_color_manual("Abundance\nCategory",values = c(1,2,4))+
   ylab("Abundance value")+xlab("Observational Cluster")+
   geom_text(data=data.frame(), aes(x=as.numeric(names(meds)), 
-                                   y=meds+c(400,400,500,600,900,1100,500,500), 
+                                   y=meds+c(400,400,500,600,700,750,1100,450,500), 
                                    label=meds), 
             col='black', size=4)+
-  geom_vline(xintercept = c(3.5,5.5),lty=3)+
+  geom_vline(xintercept = c(3.5,6.5),lty=3)+
   ggtitle("OTU abundance stratified by Observational Cluster")
-# ggsave("Boxplots_OC_50k_betao.png" ,height = 5,width = 8)          
-# ggsave("Boxplots_OC_50k_betao.tiff",height = 5,width = 8)          
-# ggsave("Boxplots_OC_50k_betao.pdf" ,height = 5,width = 8)          
+ggsave("Functions/DCAM_LS/Boxplots_OC_25k_betao.png" ,height = 5,width = 8)          
+ggsave("Functions/DCAM_LS/Boxplots_OC_25k_betao.tiff",height = 5,width = 8)          
+ggsave("Functions/DCAM_LS/Boxplots_OC_25k_betao.pdf" ,height = 5,width = 8)          
 
 
 MM <- ifelse(MM==1|MM==2|MM==3,"Low",
-             ifelse(MM==4|MM==5,"Medium","High"))
+             ifelse(MM==4|MM==5|MM==6,"Medium","High"))
 dim(MM)       
 MM2 <- apply(MM,1,function(x) table(factor(x,levels = c("Low","Medium","High"))))
 MM2 <- apply(MM2, 2, function(x) x/38)
@@ -433,7 +470,7 @@ dim(OT_r2)
 OBSCmat <- matrix(ordered,119,38)
 
 MM <- ifelse(MM==1|MM==2|MM==3,"Low",
-             ifelse(MM==4|MM==5,"Medium","High"))
+             ifelse(MM==4|MM==5|MM==6,"Medium","High"))
 dim(MM)       
 MMnum <- ifelse(MM=="Low",1,ifelse(MM=="Medium",2,3))
 cooccurrence_cluster <- comp.psm(t((MMnum)))
@@ -502,33 +539,61 @@ col1 <- factor(col1,levels = c("Low","Medium","High"))
 col2 <- factor(col2,levels = c("Low","Medium","High"))
 
 n1 <- GGally::ggnet2(net = net1,
-             alpha = 1, mode = "kamadakawai",#, layout.par = list(cell.jitter = 1),
+             alpha = 1, #mode = "kamadakawai",#, layout.par = list(cell.jitter = 1),
              color = col1,palette = "Set1",
-             node.size = 15,
+             node.size = 20,
              color.legend = "DC-1 - Modal Abundance Class",
              node.color = col1,
              label.size = 3,label=Names_red,
-             node.alpha = .8,legend.position = "top",
-             edge.alpha = .8)
+             node.alpha = .75,legend.position = "top",
+             edge.alpha = .9)
 n1
-ggsave("N1.png" ,height = 10,width = 15)
-ggsave("N1.tiff",height = 10,width = 15)
-ggsave("N1.pdf" ,height = 10,width = 15)
-
+ggsave("Functions/DCAM_LS/N1_25k.png" ,height = 10,width = 15)
+ggsave("Functions/DCAM_LS/N1_25k.tiff",height = 10,width = 15)
+ggsave("Functions/DCAM_LS/N1_25k.pdf" ,height = 10,width = 15)
+n1 <- GGally::ggnet2(net = net1,
+                     alpha = 1, #mode = "kamadakawai",#, layout.par = list(cell.jitter = 1),
+                     color = col1,palette = "Set1",
+                     node.size = 20,
+                     color.legend = "DC-1 - Modal Abundance Class",
+                     node.color = col1,
+                     label.size = 3,label=Names_red,
+                     node.alpha = .75,legend.position = "none",
+                     edge.alpha = .9)
+n1
+ggsave("Functions/DCAM_LS/N1_25k_nolegend.png" ,height = 10,width = 15)
+ggsave("Functions/DCAM_LS/N1_25k_nolegend.tiff",height = 10,width = 15)
+ggsave("Functions/DCAM_LS/N1_25k_nolegend.pdf" ,height = 10,width = 15)
 n2 <- GGally::ggnet2(net = net2,
              alpha = 1, mode = "kamadakawai",#mode = "circle",#, layout.par = list(cell.jitter = 1),
              color = col2,
              color.legend = "DC-2 - Modal Abundance Class",
              palette = "Set1",
-             node.size = 15,
+             node.size = 20,
              #node.color = med_clust,
              label.size = 4,label=Names_red,
-             node.alpha = .8,
-             edge.alpha = .8,legend.position = "top")#+theme(panel.background = element_rect(color = "grey"))
+             node.alpha = .75,
+             edge.alpha = .9,legend.position = "top")#+theme(panel.background = element_rect(color = "grey"))
 n2
-ggsave("N2_50k_betaok.png" ,height = 10,width = 15)
-ggsave("N2_50k_betaok.tiff",height = 10,width = 15)
-ggsave("N2_50k_betaok.pdf" ,height = 10,width = 15)
+ggsave("Functions/DCAM_LS/N2_25k.png" ,height = 10,width = 15)
+ggsave("Functions/DCAM_LS/N2_25k.tiff",height = 10,width = 15)
+ggsave("Functions/DCAM_LS/N2_25k.pdf" ,height = 10,width = 15)
+
+
+n2 <- GGally::ggnet2(net = net2,
+                     alpha = 1, mode = "kamadakawai",#mode = "circle",#, layout.par = list(cell.jitter = 1),
+                     color = col2,
+                     color.legend = "DC-2 - Modal Abundance Class",
+                     palette = "Set1",
+                     node.size = 20,
+                     #node.color = med_clust,
+                     label.size = 4,label=Names_red,
+                     node.alpha = .75,
+                     edge.alpha = .9,legend.position = "none")#+theme(panel.background = element_rect(color = "grey"))
+n2
+ggsave("Functions/DCAM_LS/N2_25k_nolegend.png" ,height = 10,width = 15)
+ggsave("Functions/DCAM_LS/N2_25k_nolegend.tiff",height = 10,width = 15)
+ggsave("Functions/DCAM_LS/N2_25k_nolegend.pdf" ,height = 10,width = 15)
 
 #n1+n2
 
