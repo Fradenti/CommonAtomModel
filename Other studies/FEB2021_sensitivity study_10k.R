@@ -44,8 +44,8 @@ p3 <- list(
 
 m1 <- CAM(y_obser = YD,
           y_group = YG,
-          K0 = 20,
-          L0 = 20,
+          K0 = 10,
+          L0 = 10,
           prior = p1,
           nsim = 10000,
           burn_in = 20000,
@@ -58,11 +58,11 @@ m1 <- CAM(y_obser = YD,
 
 m2 <- CAM(y_obser = YD,
           y_group = YG,
-          K0 = 20,
-          L0 = 20,
+          K0 = 10,
+          L0 = 10,
           prior = p2,
           nsim = 10000,
-          burn_in = 20000,
+          burn_in = 10000,
           thinning = 1,
           verbose = T,
           fixedAB = F,
@@ -74,11 +74,11 @@ m2 <- CAM(y_obser = YD,
 
 m3 <- CAM(y_obser = YD,
           y_group = YG,
-          K0 = 20,
-          L0 = 20,
+          K0 = 10,
+          L0 = 10,
           prior = p3,
           nsim = 10000,
-          burn_in = 20000,
+          burn_in = 10000,
           thinning = 1,
           verbose = T,
           fixedAB = F,
@@ -201,17 +201,15 @@ g4.1+g4.2+g4.3
   (g2.1+g2.2+g2.3)/
   (g3.1+g3.2+g3.3)/
   (g4.1+g4.2+g4.3)
-ggsave("/home/fra/Documents/GitHub/CommonAtomModel/Other studies/Sensivity_10ksim_20kBI_Feb2021.png",width = 10,height = 12)
-ggsave("/home/fra/Documents/GitHub/CommonAtomModel/Other studies/Sensivity_10ksim_20kBI_Feb2021.pdf",width = 10,height = 12)
+ggsave("/home/fra/Documents/GitHub/CommonAtomModel/Other studies/Sensivity_10ksim_Feb2021.png",width = 10,height = 12)
+ggsave("/home/fra/Documents/GitHub/CommonAtomModel/Other studies/Sensivity_10ksim_Feb2021.pdf",width = 10,height = 12)
 
 MM <- list(m1,m2,m3)
-saveRDS(MM,"/home/fra/Documents/GitHub/CommonAtomModel/Other studies/Sensivity_datasets__10ksim_20kBI_Feb2021.RDS")
+saveRDS(MM,"/home/fra/Documents/GitHub/CommonAtomModel/Other studies/Sensivity_datasets_10ksim_Feb2021.RDS")
 #MM <- readRDS("/home/fra/Documents/GitHub/CAM/Analysis Review 1/figures/Sensivity_datasets_10k_rigthbeta.RDS")
 m1 <- MM[[1]]
 m2 <- MM[[2]]
 m3 <- MM[[3]]
-
-
 
 psm1 <- PSM(m1$Z_j)
 psm2 <- PSM(m2$Z_j)
@@ -270,8 +268,8 @@ PSM3 <- ggplot(data=as_tibble(vv3))+geom_raster(aes(x=Var1, y=Var2, fill=value))
   ggtitle("Prior Set 3")
 PSM3
 (PSM0+PSM1)/(PSM2+PSM3)
-ggsave("/home/fra/Documents/GitHub/CommonAtomModel/Other studies/Coclustering_10k20k_Feb2021.png",width = 10,height = 10)
-ggsave("/home/fra/Documents/GitHub/CommonAtomModel/Other studies/Coclustering_10k20k_Feb2021.pdf",width = 10,height = 10)
+ggsave("/home/fra/Documents/GitHub/CommonAtomModel/Other studies/PSMS_10k_Feb2021.png",width = 10,height = 10)
+ggsave("/home/fra/Documents/GitHub/CommonAtomModel/Other studies/PSMS_10k_Feb2021.pdf",width = 10,height = 10)
 # 
 # 
 # 
@@ -294,5 +292,5 @@ gg3 <- ggplot()+  ggtitle("Prior Set 3")+
 
 
 (gg0+gg1)/(gg2+gg3)
-ggsave("/home/fra/Documents/GitHub/CommonAtomModel/Other studies/Coclustering_10k20k_Feb2021.png",width = 10,height = 10)
-ggsave("/home/fra/Documents/GitHub/CommonAtomModel/Other studies/Coclustering_10k20k_Feb2021.pdf",width = 10,height = 10)
+ggsave("/home/fra/Documents/GitHub/CommonAtomModel/Other studies/Coclustering_10k_Feb2021.png",width = 10,height = 10)
+ggsave("/home/fra/Documents/GitHub/CommonAtomModel/Other studies/Coclustering_10k_Feb2021.pdf",width = 10,height = 10)
