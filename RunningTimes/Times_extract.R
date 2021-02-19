@@ -183,3 +183,37 @@ ggsave("RunningTimes/SliceJags_S212.png",height = 11,width = 13)
 ggsave("RunningTimes/SliceJags_S212.pdf",height = 11,width = 13)
 
 
+
+
+
+
+# time table --------------------------------------------------------------
+
+
+Listone <- list()
+Listone[[1]]<- readRDS("RunningTimes/Time1A.RDS")
+Listone[[2]]<- readRDS("RunningTimes/Time1B.RDS")
+Listone[[3]]<- readRDS("RunningTimes/Time2.RDS")
+Listone[[4]]<- readRDS("RunningTimes/Time3.RDS")
+Listone[[5]]<- readRDS("RunningTimes/Time_CAM_S1a.RDS")[[1]]
+Listone[[6]]<- readRDS("RunningTimes/Time_NDP_S1a.RDS")[[1]]
+Listone[[7]]<- readRDS("RunningTimes/Time_hNDP_S1a.RDS")[[1]]
+Listone[[8]]<- readRDS("RunningTimes/Time_CAM_S2.RDS")[[1]]
+Listone[[9]]<- readRDS("RunningTimes/Time_NDP_S2.RDS")[[1]]
+Listone[[10]] <- readRDS("RunningTimes/Time_hNDP_S2.RDS")[[1]]
+
+
+library(tidyverse)
+X <- map(Listone,~ apply(.x,2,function(x)  c(mean(x),sd(x))  ))
+
+XX <- rbind(
+cbind(X[[1]],X[[2]]),
+X[[3]],X[[4]]
+)
+round(XX,4)
+
+
+Y <- rbind(cbind(X[[5]],X[[8]]),
+           cbind(X[[6]],X[[9]]),
+           cbind(X[[7]],X[[10]]))
+round(Y           ,4)

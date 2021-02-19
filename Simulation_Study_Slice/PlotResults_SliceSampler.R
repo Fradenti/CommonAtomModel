@@ -50,3 +50,23 @@ ggsave("Simulation_Study_Slice/ARINFD_OC.png",width = 12,height = 10)
 ggsave("Simulation_Study_Slice/ARINFD_OC.pdf",width = 12,height = 10)
 
 
+
+
+
+# tables ------------------------------------------------------------------
+
+t1a <- readRDS("Simulation_Study_Slice/Results_30_1A_Distributional.RDS")
+t1b <- readRDS("Simulation_Study_Slice/Results_30_1B.RDS")
+t2  <- readRDS("Simulation_Study_Slice/Results_30_2.RDS")
+t3  <- readRDS("Simulation_Study_Slice/Results_30_3.RDS")
+t2[[2]][is.na(t2[[2]][,1]),1] <- 1
+
+
+
+r1a <- map(t1a,~apply(.x,2,function(x) c(mean(x),sd(x))   ))
+r1b <- map(t1b,~apply(.x,2,function(x) c(mean(x),sd(x))   ))
+r2  <- map(t2,~apply(.x,2,function(x) c(mean(x),sd(x))   ))
+r3  <- map(t3,~apply(.x,2,function(x) c(mean(x),sd(x))   ))
+
+R1 <- round(rbind(cbind(r1a[[2]],r1b[[2]]),r2[[2]],r3[[2]]),4)
+R2 <- round(rbind(cbind(r1a[[3]],r1b[[3]]),r2[[3]],r3[[3]]),4)
