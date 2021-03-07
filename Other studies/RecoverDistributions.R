@@ -137,8 +137,8 @@ w2 <- qplot(x=1:10000,y=m1$B_DP,geom = "line")+theme_bw()+ggtitle(bquote("Observ
 
 
 w1/w2
-ggsave("../CAM/Analysis Review 1/figures/alphabeta_10k.pdf",width = 10,height = 7)
-ggsave("../CAM/Analysis Review 1/figures/alphabeta_10k.png",width = 10,height = 7)
+#ggsave("../CAM/Analysis Review 1/figures/alphabeta_10k.pdf",width = 10,height = 7)
+#ggsave("../CAM/Analysis Review 1/figures/alphabeta_10k.png",width = 10,height = 7)
 
 
 par(mfrow=c(1,2))
@@ -164,13 +164,13 @@ b2 <- ggPacf(m1$A_DP)+theme_bw()+
 
 
 w1/(a1+a2)
-ggsave("../CAM/Analysis Review 1/figures/alpha_10k.pdf",width = 10,height = 9)
-ggsave("../CAM/Analysis Review 1/figures/alpha_10k.png",width = 10,height = 9)
+#ggsave("../CAM/Analysis Review 1/figures/alpha_10k.pdf",width = 10,height = 9)
+#ggsave("../CAM/Analysis Review 1/figures/alpha_10k.png",width = 10,height = 9)
 
 
 w2/(b1+b2)
-ggsave("../CAM/Analysis Review 1/figures/beta_10k.pdf",width = 10,height = 9)
-ggsave("../CAM/Analysis Review 1/figures/beta_10k.png",width = 10,height = 9)
+#ggsave("../CAM/Analysis Review 1/figures/beta_10k.pdf",width = 10,height = 9)
+#ggsave("../CAM/Analysis Review 1/figures/beta_10k.png",width = 10,height = 9)
 
 
 
