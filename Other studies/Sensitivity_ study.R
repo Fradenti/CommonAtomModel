@@ -1,8 +1,8 @@
 library(tidyverse)
 library(coda)
 library(patchwork)
-Rcpp::sourceCpp("/home/fra/Documents/GitHub/CommonAtomModel/Functions/CAM/newCAM.cpp")
-source("/home/fra/Documents/GitHub/CommonAtomModel/Functions/CAM/newCAM.R")
+Rcpp::sourceCpp("./Functions/CAM/newCAM.cpp")
+source("~/Functions/CAM/newCAM.R")
 
 set.seed(12345)
 Y1 <- c(rnorm(50,0,.5),rnorm(50,2,.5),rnorm(50,8,1))
