@@ -22,13 +22,19 @@ ari <- plotter(t1a[[2]],t1b[[2]],t2[[2]],t3[[2]],log=F,Title = "ARI - DC - Slice
 
 nfd <- plotter(t1a[[3]],t1b[[3]],t2[[3]],t3[[3]],log=F,Title = "NFD - DC - Slice Sampler",yl = "Normalized Frobenious Distance")
 
-ari/nfd
+(ari+ylim(0,1))/(nfd+ylim(0,.65))
+
+ggsave("Simulation_Study_Slice/ARINFD_DC_fixedY.png",width = 12,height = 10)
+ggsave("Simulation_Study_Slice/ARINFD_DC_fixedY.pdf",width = 12,height = 10)
+
+(ari)/(nfd)
 
 ggsave("Simulation_Study_Slice/ARINFD_DC.png",width = 12,height = 10)
 ggsave("Simulation_Study_Slice/ARINFD_DC.pdf",width = 12,height = 10)
 
 
-ncl <- plotter(t1a[[1]],t1b[[1]],t2[[1]],t3[[1]],log=F,Title = "NFD - DC - Slice Sampler",yl = "Normalized Frobenious Distance")
+
+ncl <- plotter(t1a[[1]],t1b[[1]],t2[[1]],t3[[1]],log=F,Title = "NoC - DC - Slice Sampler",yl = "Number of Clusters")
 # what to do with this guy?
 
 
@@ -50,6 +56,9 @@ ggsave("Simulation_Study_Slice/ARINFD_OC.png",width = 12,height = 10)
 ggsave("Simulation_Study_Slice/ARINFD_OC.pdf",width = 12,height = 10)
 
 
+(ari+ylim(0,1))/(nfd+ylim(0,.65))
+ggsave("Simulation_Study_Slice/ARINFD_OC_fixedY.png",width = 12,height = 10)
+ggsave("Simulation_Study_Slice/ARINFD_OC_fixedY.pdf",width = 12,height = 10)
 
 
 
