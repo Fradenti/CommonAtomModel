@@ -174,7 +174,7 @@ arma::colvec Update_Zj_v2(arma::colvec Uj,    // uij collapsed
 
 ////////////////////////////////////////////////////////////////////// // Update Cij
 // [[Rcpp::export]]
-arma::mat Update_Cij( arma::colvec y_obser,
+arma::colvec Update_Cij( arma::colvec y_obser,
                                arma::colvec Uij,
                                arma::colvec xi_c,
                                arma::mat omega,
